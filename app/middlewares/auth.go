@@ -70,3 +70,14 @@ func AuthHandler(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+func RequireLogin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctxUser := r.Context().Value(UserContext{})
+		if ctxUser == nil {
+			helpers.Response(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}

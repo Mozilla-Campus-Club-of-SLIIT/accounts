@@ -13,6 +13,7 @@ func (b RolesRoutes) Routes() chi.Router {
 
 	r := chi.NewRouter()
 	r.Use(middlewares.AuthHandler)
+	r.Use(middlewares.RequireLogin)
 	r.Use(middlewares.RequireRoles("admin"))
 
 	r.Route("/", func(rolesRoutes chi.Router) {
