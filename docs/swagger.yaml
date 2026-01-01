@@ -1,13 +1,76 @@
 basePath: /api
 consumes:
 - application/json
+definitions:
+  helpers.SuccessResponseModel:
+    properties:
+      data: {}
+    type: object
+  models.ConnectionModel:
+    properties:
+      linkedAt:
+        type: string
+      provider:
+        type: string
+      providerAccountEmail:
+        type: string
+      providerUserId:
+        type: string
+    type: object
+  models.RoleModel:
+    properties:
+      name:
+        type: string
+    type: object
+  models.UserModel:
+    properties:
+      connections:
+        items:
+          $ref: '#/definitions/models.ConnectionModel'
+        type: array
+      createdAt:
+        example: "2025-12-31T00:00:00Z"
+        type: string
+      email:
+        example: infosliitmcc@gmail.com
+        type: string
+      id:
+        example: 00000000-0000-0000-0000-000000000000
+        type: string
+      name:
+        example: sliitmozillian
+        type: string
+      password:
+        type: string
+      private:
+        type: boolean
+      roles:
+        example:
+        - admin
+        items:
+          type: string
+        type: array
+      updatedAt:
+        example: "2025-12-31T00:00:00Z"
+        type: string
+    type: object
 host: accounts.sliitmozilla.org
 info:
   contact:
     email: infosliitmcc@gmail.com
     name: Mozilla Campus Club of SLIIT
     url: https://www.sliitmozilla.org/contact/
-  description: API documentation for the authentication service used across all sliitmozilla
+  description: |-
+    API documentation for the authentication service used across all SLIITMozilla.
+    We use `helpers.SuccessResponseModel` for successful responses and `helpers.FailureResponseModel` for errors.
+    Example success response:
+    ```json
+    { "data": ... }
+    ```
+    Example failure response:
+    ```json
+    { "error": { "code": 500, "message": ... }}
+    ```
   license:
     name: MPL-2.0
     url: https://github.com/Mozilla-Campus-Club-of-SLIIT/accounts/blob/main/LICENSE
@@ -16,20 +79,24 @@ info:
 paths:
   /authorize:
     get:
-      consumes:
-      - application/json
-      description: Initiate the authentication flow with the auth service. Any external
-        service should visit this route with a valid redirect If the user is already
-        logged in with the auth service, the auth service will redirect the user back
-        to the provided url with a temporary token - that should be used to complete
-        the authentication \
-      produces:
-      - application/json
+      description: |-
+        Initiate the authentication flow with the auth service. Any external service should visit this route with a valid redirect
+        If the user is already logged in with the auth service, the auth service will redirect the user back to the provided url with a short lived temporary token (1 minute lifespan) - that should be used to complete the authentication
+      parameters:
+      - description: URL encoded redirect url
+        example: http://localhost:3001/callback
+        in: query
+        name: redirect
+        required: true
+        type: string
       responses:
+        "302":
+          description: Redirect to the provided URL with temporary code in query param
+            'code'
+        "400":
+          description: Bad Request - invalid redirect URL
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server Error
       summary: Initiate the authentication flow
       tags:
       - Auth
@@ -37,39 +104,38 @@ paths:
     post:
       consumes:
       - application/json
-      description: Endpoint to log in a user with credentials or session token
+      description: |-
+        Endpoint to log in a user with email and password
+        Upon successful login user receives a pair of access token (found in response body) and refresh token (found in cookie: refreshToken)
       parameters:
-      - description: Username
+      - description: Request body
         in: body
-        name: username
+        name: request
         required: true
         schema:
-          type: string
-      - description: Password
-        in: body
-        name: password
-        required: true
-        schema:
-          type: string
+          type: object
       produces:
       - application/json
       responses:
         "200":
-          description: Login successful, returns session info
+          description: Access token returned in response body; refresh token is set
+            in cookie 'refreshToken'
           schema:
-            type: object
+            allOf:
+            - $ref: '#/definitions/helpers.SuccessResponseModel'
+            - properties:
+                data:
+                  properties:
+                    token:
+                      type: string
+                  type: object
+              type: object
         "400":
-          description: Invalid request or missing parameters
-          schema:
-            type: object
+          description: email and password cannot be empty
         "401":
           description: Invalid credentials
-          schema:
-            type: object
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server error
       summary: Login user
       tags:
       - Auth
@@ -77,22 +143,16 @@ paths:
     post:
       consumes:
       - application/json
-      description: Endpoint to log out a user and invalidate their session
+      description: Logout user. Clears the refreshToken cookie
       produces:
       - application/json
       responses:
         "200":
           description: Logout successful
           schema:
-            type: object
-        "401":
-          description: Unauthorized / session not found
-          schema:
-            type: object
+            $ref: '#/definitions/helpers.SuccessResponseModel'
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server Error
       summary: Logout user
       tags:
       - Auth
@@ -104,10 +164,23 @@ paths:
       produces:
       - application/json
       responses:
-        "500":
-          description: Server error
+        "200":
+          description: Role list
           schema:
-            type: object
+            allOf:
+            - $ref: '#/definitions/helpers.SuccessResponseModel'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+        "401":
+          description: Not logged in or invalid token
+        "403":
+          description: Forbidden (admin only route)
+        "500":
+          description: Internal Server Error
       security:
       - AccessToken: []
       summary: Get all roles
@@ -117,47 +190,87 @@ paths:
       consumes:
       - application/json
       description: Create a new role. Protected route
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RoleModel'
       produces:
       - application/json
       responses:
+        "201":
+          description: Created
+        "400":
+          description: name cannot be empty
+        "401":
+          description: Not logged in or invalid token
+        "403":
+          description: Forbidden (admin only route)
+        "409":
+          description: Duplicate role
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server Error
       security:
       - AccessToken: []
       summary: Create a new role
       tags:
       - Roles
-  /roles/{delete}:
+  /roles/{role}:
     delete:
       consumes:
       - application/json
       description: Delete a role. Protected route
+      parameters:
+      - description: Role name
+        in: path
+        name: role
+        required: true
+        type: string
       produces:
       - application/json
       responses:
+        "200":
+          description: OK
+        "401":
+          description: Not logged in or invalid token
+        "403":
+          description: Attempt to delete admin role
+        "404":
+          description: Role not found
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server Error
       security:
       - AccessToken: []
       summary: Delete a role
       tags:
       - Roles
-  /roles/{role}:
     patch:
       consumes:
       - application/json
       description: Update a role. Protected route
+      parameters:
+      - description: Role name
+        in: path
+        name: role
+        required: true
+        type: string
       produces:
       - application/json
       responses:
+        "200":
+          description: OK
+        "400":
+          description: Name cannot be empty
+        "401":
+          description: Not logged in or invalid token
+        "403":
+          description: Attempt to modify admin role
+        "404":
+          description: Role not found
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server Error
       security:
       - AccessToken: []
       summary: Update a role
@@ -171,10 +284,28 @@ paths:
       produces:
       - application/json
       responses:
-        "500":
-          description: Server error
+        "200":
+          description: Session data
           schema:
-            type: object
+            allOf:
+            - $ref: '#/definitions/helpers.SuccessResponseModel'
+            - properties:
+                data:
+                  properties:
+                    id:
+                      type: string
+                    roles:
+                      items:
+                        type: string
+                      type: array
+                  type: object
+              type: object
+        "401":
+          description: Not logged in or invalid token
+        "500":
+          description: Internal Server error
+      security:
+      - AccessToken: []
       summary: Get current session
       tags:
       - Auth
@@ -182,19 +313,41 @@ paths:
     post:
       consumes:
       - application/json
-      description: Initiate the authentication flow with the auth service. Any external
-        service should visit this route with a valid redirect If the user is already
-        logged in with the auth service, the auth service will redirect the user back
-        to the provided url with a temporary token - that should be used to complete
-        the authentication \
+      description: |-
+        This is the second step of the authorization flow Check GET /api/authorize for more information about the first step of this flow.
+        The client should invoke this endpoint with the code received from the previous step.
+        The client shall receive a pair of access token (found in response body) and refresh token (found in cookie: refreshToken) after completing all the steps.
+        Client can act on behalf of the user after receiving the token pair
+      parameters:
+      - description: URL encoded code received from previous step
+        example: abcdefgh
+        in: query
+        name: code
+        required: true
+        type: string
       produces:
       - application/json
       responses:
-        "500":
-          description: Server error
+        "200":
+          description: Access token returned in response body; refresh token is set
+            in cookie 'refreshToken'
           schema:
-            type: object
-      summary: Initiate the authentication flow
+            allOf:
+            - $ref: '#/definitions/helpers.SuccessResponseModel'
+            - properties:
+                data:
+                  properties:
+                    token:
+                      type: string
+                  type: object
+              type: object
+        "401":
+          description: If token is invalid or expired
+        "404":
+          description: Token is related to a non-existing user
+        "500":
+          description: Internal Server error
+      summary: Get tokens from code
       tags:
       - Auth
   /token/refresh:
@@ -205,10 +358,22 @@ paths:
       produces:
       - application/json
       responses:
-        "500":
-          description: Server error
+        "200":
+          description: Access token
           schema:
-            type: object
+            allOf:
+            - $ref: '#/definitions/helpers.SuccessResponseModel'
+            - properties:
+                data:
+                  properties:
+                    token:
+                      type: string
+                  type: object
+              type: object
+        "401":
+          description: Invalid or missing refresh token
+        "500":
+          description: Internal Server Error
       summary: Refresh acess token
       tags:
       - Auth
@@ -220,10 +385,21 @@ paths:
       produces:
       - application/json
       responses:
-        "500":
-          description: Server error
+        "200":
+          description: User list
           schema:
-            type: object
+            allOf:
+            - $ref: '#/definitions/helpers.SuccessResponseModel'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.UserModel'
+                  type: array
+              type: object
+        "401":
+          description: Not logged in or invalid token
+        "403":
+          description: Forbidden (admin only route)
       security:
       - AccessToken: []
       summary: List all users
@@ -233,13 +409,31 @@ paths:
       consumes:
       - application/json
       description: Create user
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            password:
+              type: string
+            username:
+              type: string
+          type: object
       produces:
       - application/json
       responses:
+        "201":
+          description: Created
+        "400":
+          description: name, email or password can't be empty
+        "409":
+          description: Username or email already in use
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server Error
       summary: Create user
       tags:
       - Users
@@ -251,13 +445,35 @@ paths:
         Get a specific user
         If the user has set the profile visibility as public then it is free to view by anyone. If the profile is set to be private, then regular users will not gain the access to this resource.
         However, admin users can still bypass this protection
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
-        "500":
-          description: Server error
+        "200":
+          description: User
           schema:
-            type: object
+            allOf:
+            - $ref: '#/definitions/helpers.SuccessResponseModel'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.UserModel'
+              type: object
+        "400":
+          description: Invalid user id
+        "401":
+          description: Not logged in or invalid token
+        "403":
+          description: Forbidden. Trying to access another user's account. Admins
+            can bypass this
+        "404":
+          description: User not found
+        "500":
+          description: Internal Server error
       security:
       - AccessToken: []
       summary: Get a specific user
@@ -266,14 +482,18 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Update a user. Admin only route
+      description: |-
+        Update a user. Admin only route
+        Not implemented yet
       produces:
       - application/json
       responses:
+        "401":
+          description: Not logged in or invalid token
+        "403":
+          description: Forbidden (admin only route)
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server Error
       security:
       - AccessToken: []
       summary: Update a user
@@ -284,13 +504,35 @@ paths:
       consumes:
       - application/json
       description: Add a role to the user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RoleModel'
       produces:
       - application/json
       responses:
+        "200":
+          description: OK
+        "400":
+          description: Role cannot be empty
+        "401":
+          description: Not logged in or invalid token
+        "403":
+          description: Forbidden (admin only route)
+        "404":
+          description: User or role not found
+        "409":
+          description: Already assigned
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server Error
       security:
       - AccessToken: []
       summary: Add a role to the user
@@ -301,13 +543,32 @@ paths:
       consumes:
       - application/json
       description: Remove an existing role from the user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role name
+        in: path
+        name: role
+        required: true
+        type: string
       produces:
       - application/json
       responses:
+        "200":
+          description: OK
+        "400":
+          description: Invalid user id
+        "401":
+          description: Not logged in or invalid token
+        "403":
+          description: Cannot remove admin from yourself
+        "404":
+          description: User or role not found
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server Error
       security:
       - AccessToken: []
       summary: Remove an existing role from the user
@@ -321,10 +582,22 @@ paths:
       produces:
       - application/json
       responses:
-        "500":
-          description: Server error
+        "200":
+          description: Current user
           schema:
-            type: object
+            allOf:
+            - $ref: '#/definitions/helpers.SuccessResponseModel'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.UserModel'
+              type: object
+        "400":
+          description: User not found. This error can only happen if the user is deleted
+            while invoking this endpoint
+        "401":
+          description: Not logged in or invalid token
+        "500":
+          description: Internal Server Error
       security:
       - AccessToken: []
       summary: Get current user
@@ -333,14 +606,16 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Update current user details such as username, social links, etc.
+      description: |-
+        Update current user details such as username, social links, etc.
+        Endpoint not implemented yet
       produces:
       - application/json
       responses:
+        "401":
+          description: Not logged in or invalid token
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server error
       security:
       - AccessToken: []
       summary: Update current user
@@ -350,14 +625,16 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Change password of current user
+      description: |-
+        Change password of current user
+        Endpoint not implemented yet
       produces:
       - application/json
       responses:
+        "401":
+          description: Not logged in or invalid token
         "500":
-          description: Server error
-          schema:
-            type: object
+          description: Internal Server error
       security:
       - AccessToken: []
       summary: Change password of current user
@@ -368,4 +645,9 @@ produces:
 schemes:
 - https
 - http
+securityDefinitions:
+  AccessToken:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

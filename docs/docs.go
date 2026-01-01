@@ -31,30 +31,37 @@ const docTemplate = `{
     "paths": {
         "/authorize": {
             "get": {
-                "description": "Initiate the authentication flow with the auth service. Any external service should visit this route with a valid redirect If the user is already logged in with the auth service, the auth service will redirect the user back to the provided url with a temporary token - that should be used to complete the authentication \\",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
+                "description": "Initiate the authentication flow with the auth service. Any external service should visit this route with a valid redirect\nIf the user is already logged in with the auth service, the auth service will redirect the user back to the provided url with a short lived temporary token (1 minute lifespan) - that should be used to complete the authentication",
                 "tags": [
                     "Auth"
                 ],
                 "summary": "Initiate the authentication flow",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "http://localhost:3001/callback",
+                        "description": "URL encoded redirect url",
+                        "name": "redirect",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
+                    "302": {
+                        "description": "Redirect to the provided URL with temporary code in query param 'code'"
+                    },
+                    "400": {
+                        "description": "Bad Request - invalid redirect URL"
+                    },
                     "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
             }
         },
         "/login": {
             "post": {
-                "description": "Endpoint to log in a user with credentials or session token",
+                "description": "Endpoint to log in a user with email and password\nUpon successful login user receives a pair of access token (found in response body) and refresh token (found in cookie: refreshToken)",
                 "consumes": [
                     "application/json"
                 ],
@@ -67,55 +74,54 @@ const docTemplate = `{
                 "summary": "Login user",
                 "parameters": [
                     {
-                        "description": "Username",
-                        "name": "username",
+                        "description": "Request body",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Password",
-                        "name": "password",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
+                            "type": "object"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Login successful, returns session info",
+                        "description": "Access token returned in response body; refresh token is set in cookie 'refreshToken'",
                         "schema": {
-                            "type": "object"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helpers.SuccessResponseModel"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "Invalid request or missing parameters",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "email and password cannot be empty"
                     },
                     "401": {
-                        "description": "Invalid credentials",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "Invalid credentials"
                     },
                     "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "Internal Server error"
                     }
                 }
             }
         },
         "/logout": {
             "post": {
-                "description": "Endpoint to log out a user and invalidate their session",
+                "description": "Logout user. Clears the refreshToken cookie",
                 "consumes": [
                     "application/json"
                 ],
@@ -130,20 +136,11 @@ const docTemplate = `{
                     "200": {
                         "description": "Logout successful",
                         "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized / session not found",
-                        "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/helpers.SuccessResponseModel"
                         }
                     },
                     "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -167,11 +164,35 @@ const docTemplate = `{
                 ],
                 "summary": "Get all roles",
                 "responses": {
-                    "500": {
-                        "description": "Server error",
+                    "200": {
+                        "description": "Role list",
                         "schema": {
-                            "type": "object"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helpers.SuccessResponseModel"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Forbidden (admin only route)"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             },
@@ -192,17 +213,40 @@ const docTemplate = `{
                     "Roles"
                 ],
                 "summary": "Create a new role",
-                "responses": {
-                    "500": {
-                        "description": "Server error",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/models.RoleModel"
                         }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "name cannot be empty"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Forbidden (admin only route)"
+                    },
+                    "409": {
+                        "description": "Duplicate role"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
         },
-        "/roles/{delete}": {
+        "/roles/{role}": {
             "delete": {
                 "security": [
                     {
@@ -220,17 +264,33 @@ const docTemplate = `{
                     "Roles"
                 ],
                 "summary": "Delete a role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role name",
+                        "name": "role",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Attempt to delete admin role"
+                    },
+                    "404": {
+                        "description": "Role not found"
+                    },
                     "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
-            }
-        },
-        "/roles/{role}": {
+            },
             "patch": {
                 "security": [
                     {
@@ -248,18 +308,44 @@ const docTemplate = `{
                     "Roles"
                 ],
                 "summary": "Update a role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role name",
+                        "name": "role",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Name cannot be empty"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Attempt to modify admin role"
+                    },
+                    "404": {
+                        "description": "Role not found"
+                    },
                     "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
             }
         },
         "/session": {
             "get": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
                 "description": "Get the current session using the access token",
                 "consumes": [
                     "application/json"
@@ -272,18 +358,47 @@ const docTemplate = `{
                 ],
                 "summary": "Get current session",
                 "responses": {
-                    "500": {
-                        "description": "Server error",
+                    "200": {
+                        "description": "Session data",
                         "schema": {
-                            "type": "object"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helpers.SuccessResponseModel"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "roles": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "500": {
+                        "description": "Internal Server error"
                     }
                 }
             }
         },
         "/token": {
             "post": {
-                "description": "Initiate the authentication flow with the auth service. Any external service should visit this route with a valid redirect If the user is already logged in with the auth service, the auth service will redirect the user back to the provided url with a temporary token - that should be used to complete the authentication \\",
+                "description": "This is the second step of the authorization flow Check GET /api/authorize for more information about the first step of this flow.\nThe client should invoke this endpoint with the code received from the previous step.\nThe client shall receive a pair of access token (found in response body) and refresh token (found in cookie: refreshToken) after completing all the steps.\nClient can act on behalf of the user after receiving the token pair",
                 "consumes": [
                     "application/json"
                 ],
@@ -293,13 +408,49 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Initiate the authentication flow",
+                "summary": "Get tokens from code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "abcdefgh",
+                        "description": "URL encoded code received from previous step",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
-                    "500": {
-                        "description": "Server error",
+                    "200": {
+                        "description": "Access token returned in response body; refresh token is set in cookie 'refreshToken'",
                         "schema": {
-                            "type": "object"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helpers.SuccessResponseModel"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
+                    },
+                    "401": {
+                        "description": "If token is invalid or expired"
+                    },
+                    "404": {
+                        "description": "Token is related to a non-existing user"
+                    },
+                    "500": {
+                        "description": "Internal Server error"
                     }
                 }
             }
@@ -318,11 +469,34 @@ const docTemplate = `{
                 ],
                 "summary": "Refresh acess token",
                 "responses": {
-                    "500": {
-                        "description": "Server error",
+                    "200": {
+                        "description": "Access token",
                         "schema": {
-                            "type": "object"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helpers.SuccessResponseModel"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
+                    },
+                    "401": {
+                        "description": "Invalid or missing refresh token"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -346,11 +520,32 @@ const docTemplate = `{
                 ],
                 "summary": "List all users",
                 "responses": {
-                    "500": {
-                        "description": "Server error",
+                    "200": {
+                        "description": "User list",
                         "schema": {
-                            "type": "object"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helpers.SuccessResponseModel"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.UserModel"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Forbidden (admin only route)"
                     }
                 }
             },
@@ -366,12 +561,40 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Create user",
-                "responses": {
-                    "500": {
-                        "description": "Server error",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
                         "schema": {
-                            "type": "object"
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "type": "string"
+                                },
+                                "password": {
+                                    "type": "string"
+                                },
+                                "username": {
+                                    "type": "string"
+                                }
+                            }
                         }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "name, email or password can't be empty"
+                    },
+                    "409": {
+                        "description": "Username or email already in use"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -395,11 +618,32 @@ const docTemplate = `{
                 ],
                 "summary": "Get current user",
                 "responses": {
-                    "500": {
-                        "description": "Server error",
+                    "200": {
+                        "description": "Current user",
                         "schema": {
-                            "type": "object"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helpers.SuccessResponseModel"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.UserModel"
+                                        }
+                                    }
+                                }
+                            ]
                         }
+                    },
+                    "400": {
+                        "description": "User not found. This error can only happen if the user is deleted while invoking this endpoint"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             },
@@ -409,7 +653,7 @@ const docTemplate = `{
                         "AccessToken": []
                     }
                 ],
-                "description": "Update current user details such as username, social links, etc.",
+                "description": "Update current user details such as username, social links, etc.\nEndpoint not implemented yet",
                 "consumes": [
                     "application/json"
                 ],
@@ -421,11 +665,11 @@ const docTemplate = `{
                 ],
                 "summary": "Update current user",
                 "responses": {
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
                     "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "Internal Server error"
                     }
                 }
             }
@@ -437,7 +681,7 @@ const docTemplate = `{
                         "AccessToken": []
                     }
                 ],
-                "description": "Change password of current user",
+                "description": "Change password of current user\nEndpoint not implemented yet",
                 "consumes": [
                     "application/json"
                 ],
@@ -449,11 +693,11 @@ const docTemplate = `{
                 ],
                 "summary": "Change password of current user",
                 "responses": {
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
                     "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "Internal Server error"
                     }
                 }
             }
@@ -476,12 +720,48 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Get a specific user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
-                    "500": {
-                        "description": "Server error",
+                    "200": {
+                        "description": "User",
                         "schema": {
-                            "type": "object"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helpers.SuccessResponseModel"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.UserModel"
+                                        }
+                                    }
+                                }
+                            ]
                         }
+                    },
+                    "400": {
+                        "description": "Invalid user id"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Forbidden. Trying to access another user's account. Admins can bypass this"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    },
+                    "500": {
+                        "description": "Internal Server error"
                     }
                 }
             },
@@ -491,7 +771,7 @@ const docTemplate = `{
                         "AccessToken": []
                     }
                 ],
-                "description": "Update a user. Admin only route",
+                "description": "Update a user. Admin only route\nNot implemented yet",
                 "consumes": [
                     "application/json"
                 ],
@@ -503,11 +783,14 @@ const docTemplate = `{
                 ],
                 "summary": "Update a user",
                 "responses": {
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Forbidden (admin only route)"
+                    },
                     "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -530,12 +813,45 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Add a role to the user",
-                "responses": {
-                    "500": {
-                        "description": "Server error",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/models.RoleModel"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Role cannot be empty"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Forbidden (admin only route)"
+                    },
+                    "404": {
+                        "description": "User or role not found"
+                    },
+                    "409": {
+                        "description": "Already assigned"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -558,15 +874,129 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Remove an existing role from the user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Role name",
+                        "name": "role",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Invalid user id"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Cannot remove admin from yourself"
+                    },
+                    "404": {
+                        "description": "User or role not found"
+                    },
                     "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
             }
+        }
+    },
+    "definitions": {
+        "helpers.SuccessResponseModel": {
+            "type": "object",
+            "properties": {
+                "data": {}
+            }
+        },
+        "models.ConnectionModel": {
+            "type": "object",
+            "properties": {
+                "linkedAt": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "providerAccountEmail": {
+                    "type": "string"
+                },
+                "providerUserId": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RoleModel": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UserModel": {
+            "type": "object",
+            "properties": {
+                "connections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ConnectionModel"
+                    }
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2025-12-31T00:00:00Z"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "infosliitmcc@gmail.com"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "00000000-0000-0000-0000-000000000000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "sliitmozillian"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "private": {
+                    "type": "boolean"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "admin"
+                    ]
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2025-12-31T00:00:00Z"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "AccessToken": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
@@ -578,7 +1008,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api",
 	Schemes:          []string{"https", "http"},
 	Title:            "sliitmozilla Auth Service",
-	Description:      "API documentation for the authentication service used across all sliitmozilla",
+	Description:      "API documentation for the authentication service used across all SLIITMozilla.\nWe use `helpers.SuccessResponseModel` for successful responses and `helpers.FailureResponseModel` for errors.\nExample success response:\n```json\n{ \"data\": ... }\n```\nExample failure response:\n```json\n{ \"error\": { \"code\": 500, \"message\": ... }}\n```",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

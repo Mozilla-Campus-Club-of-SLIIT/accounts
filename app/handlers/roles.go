@@ -16,7 +16,10 @@ import (
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @success		200 object helpers.SuccessResponseModel{data=[]string} "Role list"
+// @failure		401 "Not logged in or invalid token"
+// @failure		403 "Forbidden (admin only route)"
+// @failure     500 "Internal Server Error"
 // @router      /roles [GET]
 func GetRoles(w http.ResponseWriter, r *http.Request) {
 	roles, err := models.RoleModel{}.SelectAll()
@@ -33,7 +36,15 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @param       request body models.RoleModel true "Request body"
+// @success		201 "Created"
+// @failure		400 "Invalid or empty body"
+// @failure		400 "name cannot be empty"
+// @failure		401 "Not logged in or invalid token"
+// @failure		403 "Attempting to create admin role"
+// @failure		403 "Forbidden (admin only route)"
+// @failure		409 "Duplicate role"
+// @failure     500 "Internal Server Error"
 // @router      /roles [POST]
 func CreateRole(w http.ResponseWriter, r *http.Request) {
 	var role models.RoleModel
@@ -68,7 +79,15 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @param		role path string true "Role name"
+// @success		200 "OK"
+// @failure		400 "Invalid or empty body"
+// @failure 	400 "Name cannot be empty"
+// @failure		401 "Not logged in or invalid token"
+// @failure		403 "Forbidden (admin only route)"
+// @failure		403 "Attempt to modify admin role"
+// @failure		404 "Role not found"
+// @failure     500 "Internal Server Error"
 // @router      /roles/{role} [PATCH]
 func UpdateRole(w http.ResponseWriter, r *http.Request) {
 	role := r.PathValue("role")
@@ -112,8 +131,14 @@ func UpdateRole(w http.ResponseWriter, r *http.Request) {
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
-// @router      /roles/{delete} [DELETE]
+// @param		role path string true "Role name"
+// @success		200 "OK"
+// @failure		401 "Not logged in or invalid token"
+// @failure		403 "Forbidden (admin only route)"
+// @failure		403 "Attempt to delete admin role"
+// @failure		404 "Role not found"
+// @failure     500 "Internal Server Error"
+// @router      /roles/{role} [DELETE]
 func DeleteRole(w http.ResponseWriter, r *http.Request) {
 	role := models.RoleModel{Name: r.PathValue("role")}
 	if role.Name == "admin" {

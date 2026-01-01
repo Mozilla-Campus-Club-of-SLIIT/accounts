@@ -5,23 +5,34 @@ import (
 	"net/http"
 )
 
+type ErrorResponseModel struct {
+	Code    int    `json:"code" example:"500"`
+	Message string `json:"message" example:"Internal server error"`
+}
+
+type SuccessResponseModel struct {
+	Data any `json:"data"`
+}
+
+type FailureResponseModel struct {
+	Error ErrorResponseModel `json:"error"`
+}
+
 func Response(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	var body map[string]any
 
 	if status >= 200 && status < 300 {
-		body = map[string]any{
-			"data": data,
-		}
-	} else {
-		body = map[string]any{
-			"error": map[string]any{
-				"code":    status,
-				"message": data,
-			},
-		}
+		_ = json.NewEncoder(w).Encode(SuccessResponseModel{
+			Data: data,
+		})
+		return
 	}
 
-	json.NewEncoder(w).Encode(body)
+	_ = json.NewEncoder(w).Encode(FailureResponseModel{
+		Error: ErrorResponseModel{
+			Code:    status,
+			Message: data.(string),
+		},
+	})
 }

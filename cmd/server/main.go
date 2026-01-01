@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -25,6 +26,8 @@ func main() {
 		}
 		http.ServeFile(w, req, path)
 	})
-
-	http.ListenAndServe(c.Host+":"+c.Port, r)
+	err := http.ListenAndServe(c.Host+":"+c.Port, r)
+	if err != nil {
+		log.Println(err.Error())
+	}
 }
