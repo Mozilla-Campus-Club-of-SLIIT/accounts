@@ -1,17 +1,30 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom"
-import Login from "./pages/Login"
-import Signup from "./pages/Signup"
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+import Login from "./pages/login";
+import Signup from "./pages/signup";
+import Header from "./components/header";
+import Profile from "./pages/profile";
+import Index from "./pages";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route index element={<div>hello world</div>}/>
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
+        <Route
+          element={
+            <div className="min-h-screen">
+              <Header />
+              <Outlet />
+            </div>
+          }
+        >
+          <Route index element={<Index />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -281,6 +281,29 @@ const docTemplate = `{
                 }
             }
         },
+        "/token": {
+            "post": {
+                "description": "Initiate the authentication flow with the auth service. Any external service should visit this route with a valid redirect If the user is already logged in with the auth service, the auth service will redirect the user back to the provided url with a temporary token - that should be used to complete the authentication \\",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Initiate the authentication flow",
+                "responses": {
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/token/refresh": {
             "post": {
                 "description": "Refresh the access token with the refresh token",

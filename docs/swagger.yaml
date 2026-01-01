@@ -178,6 +178,25 @@ paths:
       summary: Get current session
       tags:
       - Auth
+  /token:
+    post:
+      consumes:
+      - application/json
+      description: Initiate the authentication flow with the auth service. Any external
+        service should visit this route with a valid redirect If the user is already
+        logged in with the auth service, the auth service will redirect the user back
+        to the provided url with a temporary token - that should be used to complete
+        the authentication \
+      produces:
+      - application/json
+      responses:
+        "500":
+          description: Server error
+          schema:
+            type: object
+      summary: Initiate the authentication flow
+      tags:
+      - Auth
   /token/refresh:
     post:
       consumes:

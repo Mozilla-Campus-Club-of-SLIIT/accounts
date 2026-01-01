@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
 
+	"github.com/sliitmozilla/accounts/app/middlewares"
 	_ "github.com/sliitmozilla/accounts/docs"
 )
 
@@ -16,7 +17,9 @@ func SetupRoutes() *chi.Mux {
 	r := chi.NewRouter()
 	dir, _ := os.Getwd()
 
+	r.Use(middlewares.Cors)
 	r.Use(middleware.Logger)
+	r.Use(middleware.AllowContentType("application/json"))
 
 	r.Mount("/", AuthRoutes{}.Routes())
 	r.Mount("/users", UsersRoute{}.Routes())

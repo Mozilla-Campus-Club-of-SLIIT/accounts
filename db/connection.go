@@ -12,7 +12,7 @@ var Conn *pgx.Conn
 
 func ConnectDB() (*pgx.Conn, error) {
 	godotenv.Load()
-	dbUrl := os.Getenv("POSTGRES_URL")
+	dbUrl := os.Getenv("DB_URL")
 
 	var err error
 	Conn, err = pgx.Connect(context.Background(), dbUrl)

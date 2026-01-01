@@ -8,6 +8,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/sliitmozilla/accounts/db"
 	apiErrors "github.com/sliitmozilla/accounts/errors"
 	helpers "github.com/sliitmozilla/accounts/helpers"
@@ -48,9 +49,18 @@ func (UserModel) Login(email string, password string) (accessToken, refreshToken
 	}
 
 	u := UserModel{Email: email}
-	if err := rows.Scan(&u.ID, &u.Name, &u.Password, &u.Roles); err != nil {
+	var roles pgtype.Array[pgtype.Text]
+	if err := rows.Scan(&u.ID, &u.Name, &u.Password, &roles); err != nil {
 		return "", "", err
 	}
+	// assign roles
+	u.Roles = []string{}
+	for _, role := range roles.Elements {
+		if role.String != "" {
+			u.Roles = append(u.Roles, role.String)
+		}
+	}
+
 	if helpers.ValidatePassword(u.Password, password) {
 		accessToken, refreshToken, err = helpers.GenerateTokens(u.ID.String(), u.Name, u.Email, u.Roles)
 		return
@@ -100,7 +110,16 @@ func (UserModel) GetUserByID(id uuid.UUID) (u UserModel, err error) {
 	}
 
 	u = UserModel{}
-	rows.Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt, &u.UpdatedAt, &u.Private, &u.Roles)
+	var roles pgtype.Array[pgtype.Text]
+	rows.Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt, &u.UpdatedAt, &u.Private, &roles)
+	// assign roles
+	u.Roles = []string{}
+	for _, role := range roles.Elements {
+		if role.String != "" {
+			u.Roles = append(u.Roles, role.String)
+		}
+	}
+
 	return
 }
 

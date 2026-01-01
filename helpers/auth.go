@@ -44,3 +44,15 @@ func GenerateTokens(id, name, email string, roles []string) (accessToken, refres
 	refreshToken, err = refresh.SignedString([]byte(jwtSecret))
 	return
 }
+
+func GetClaimsFromToken(token string) (jwt.MapClaims, error) {
+	godotenv.Load()
+	jwtSecret := os.Getenv("JWT_SECRET")
+	claims := jwt.MapClaims{}
+	if _, err := jwt.ParseWithClaims(token, claims, func(*jwt.Token) (interface{}, error) {
+		return []byte(jwtSecret), nil
+	}); err != nil {
+		return nil, err
+	}
+	return claims, nil
+}
