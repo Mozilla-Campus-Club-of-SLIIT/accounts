@@ -19,7 +19,9 @@ import (
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @success		200 object helpers.SuccessResponseModel{data=[]models.UserModel} "User list"
+// @failure		401 "Not logged in or invalid token"
+// @failure		403 "Forbidden (admin only route)"
 // @router      /users [GET]
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := models.UserModel{}.SelectAll()
@@ -35,7 +37,12 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 // @description Create user
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @param		request body object{username=string,email=string,password=string} true "Request body"
+// @success		201 "Created"
+// @failure		400 "Invalid or empty body"
+// @failure 	400 "name, email or password can't be empty"
+// @failure		409 "Username or email already in use"
+// @failure     500 "Internal Server Error"
 // @router      /users [POST]
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -66,7 +73,10 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @success 	200 {object} helpers.SuccessResponseModel{data=models.UserModel} "Current user"
+// @failure 	400 "User not found. This error can only happen if the user is deleted while invoking this endpoint"
+// @failure		401 "Not logged in or invalid token"
+// @failure     500 "Internal Server Error"
 // @router      /users/me [GET]
 func GetMe(w http.ResponseWriter, r *http.Request) {
 	ctxUser := r.Context().Value(middlewares.UserContext{}).(*models.UserModel)
@@ -86,20 +96,24 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 // @tags        Users
 // @summary		Update current user
 // @description Update current user details such as username, social links, etc.
+// @description Endpoint not implemented yet
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @failure		401 "Not logged in or invalid token"
+// @failure     500 "Internal Server error"
 // @router      /users/me [PATCH]
 func UpdateMe(w http.ResponseWriter, r *http.Request) {}
 
 // @tags        Users
 // @summary		Change password of current user
 // @description Change password of current user
+// @description Endpoint not implemented yet
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @failure		401 "Not logged in or invalid token"
+// @failure     500 "Internal Server error"
 // @router      /users/me/password [PATCH]
 func ChangePassword(w http.ResponseWriter, r *http.Request) {}
 
@@ -113,7 +127,13 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {}
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @param		id path string true "User ID"
+// @success		200 object helpers.SuccessResponseModel{data=models.UserModel} "User"
+// @failure		400 "Invalid user id"
+// @failure		401 "Not logged in or invalid token"
+// @failure 	403 "Forbidden. Trying to access another user's account. Admins can bypass this"
+// @failure		404 "User not found"
+// @failure     500 "Internal Server error"
 // @router      /users/{id} [GET]
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	requestedUserId := r.PathValue("id")
@@ -144,10 +164,13 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 // @tags        Users
 // @summary		Update a user
 // @description Update a user. Admin only route
+// @description Not implemented yet
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @failure		401 "Not logged in or invalid token"
+// @failure		403 "Forbidden (admin only route)"
+// @failure     500 "Internal Server Error"
 // @router      /users/{id} [PATCH]
 func UpdateUser(w http.ResponseWriter, r *http.Request) {}
 
@@ -157,7 +180,17 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {}
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @param		id path string true "User ID"
+// @param		request body models.RoleModel true "Request body"
+// @success		200 "OK"
+// @failure		400 "Invalid user id"
+// @failure		400 "Invalid or empty body"
+// @failure		400 "Role cannot be empty"
+// @failure		401 "Not logged in or invalid token"
+// @failure		403 "Forbidden (admin only route)"
+// @failure		404 "User or role not found"
+// @failure		409 "Already assigned"
+// @failure     500 "Internal Server Error"
 // @router      /users/{id}/roles [POST]
 func AddRole(w http.ResponseWriter, r *http.Request) {
 	requestedUserId := r.PathValue("id")
@@ -198,7 +231,15 @@ func AddRole(w http.ResponseWriter, r *http.Request) {
 // @security	AccessToken
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @param		id path string true "User ID"
+// @param		role path string true "Role name"
+// @success		200 "OK"
+// @failure		400 "Invalid user id"
+// @failure		401 "Not logged in or invalid token"
+// @failure		403 "Forbidden (admin only route)"
+// @failure		403 "Cannot remove admin from yourself"
+// @failure 	404 "User or role not found"
+// @failure     500 "Internal Server Error"
 // @router      /users/{id}/roles/{role} [DELETE]
 func RemoveRole(w http.ResponseWriter, r *http.Request) {
 	requestedUserId := r.PathValue("id")

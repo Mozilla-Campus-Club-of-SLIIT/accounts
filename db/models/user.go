@@ -15,14 +15,14 @@ import (
 )
 
 type UserModel struct {
-	ID          uuid.UUID         `json:"id"`
-	Name        string            `json:"name"`
-	Email       string            `json:"email"`
-	Password    string            `json:"password" db:"-"`
+	ID          uuid.UUID         `json:"id" example:"00000000-0000-0000-0000-000000000000"`
+	Name        string            `json:"name" example:"sliitmozillian"`
+	Email       string            `json:"email" example:"infosliitmcc@gmail.com"`
+	Password    string            `json:"password,omitempty" db:"-"`
 	Private     bool              `json:"private"`
-	CreatedAt   *time.Time        `json:"createdAt"`
-	UpdatedAt   *time.Time        `json:"updatedAt"`
-	Roles       []string          `json:"roles" db:"-"`
+	CreatedAt   *time.Time        `json:"createdAt" example:"2025-12-31T00:00:00Z"`
+	UpdatedAt   *time.Time        `json:"updatedAt" example:"2025-12-31T00:00:00Z"`
+	Roles       []string          `json:"roles" db:"-" example:"admin"`
 	Connections []ConnectionModel `json:"connections" db:"-"`
 }
 

@@ -9,7 +9,16 @@ import (
 )
 
 // @title					 sliitmozilla Auth Service
-// @description				 API documentation for the authentication service used across all sliitmozilla
+// @description	 API documentation for the authentication service used across all SLIITMozilla.
+// @description	 We use `helpers.SuccessResponseModel` for successful responses and `helpers.FailureResponseModel` for errors.
+// @description	 Example success response:
+// @description	 ```json
+// @description	 { "data": ... }
+// @description	 ```
+// @description	 Example failure response:
+// @description	 ```json
+// @description	 { "error": { "code": 500, "message": ... }}
+// @description	 ```
 // @version					 1.0
 // @schemes					 https http
 // @host					 accounts.sliitmozilla.org
@@ -21,9 +30,11 @@ import (
 // @license.url 			 https://github.com/Mozilla-Campus-Club-of-SLIIT/accounts/blob/main/LICENSE
 // @accept 					 json
 // @produce 				 json
-// @securityDefinitions.http AccessToken
+// @securityDefinitions.apiKey AccessToken
 // @scheme 					 bearer
 // @bearerFormat 			 JWT
+// @in header
+// @name Authorization
 func Handler(w http.ResponseWriter, req *http.Request) {
 	r := chi.NewRouter()
 	r.Mount("/api", router.SetupRoutes())

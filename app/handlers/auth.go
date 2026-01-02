@@ -28,7 +28,10 @@ import (
 // @description Get the current session using the access token
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @security	AccessToken
+// @success 	200 {object} helpers.SuccessResponseModel{data=object{id=string,roles=[]string}} "Session data"
+// @failure		401 "Not logged in or invalid token"
+// @failure     500 "Internal Server error"
 // @router      /session [GET]
 func GetSession(w http.ResponseWriter, r *http.Request) {
 	u := r.Context().Value(middlewares.UserContext{}).(*models.UserModel)
@@ -57,13 +60,15 @@ func createAndStoreCode(id string) ([]byte, error) {
 // @tags        Auth
 // @summary		Initiate the authentication flow
 // @description Initiate the authentication flow with the auth service. \
-// @description	Any external service should visit this route with a valid redirect \
+// @description	Any external service should visit this route with a valid redirect
 // @description	If the user is already logged in with the auth service, the auth \
 // @description	service will redirect the user back to the provided url with a \
-// @description	temporary token - that should be used to complete the authentication \
-// @accept      json
-// @produce     json
-// @failure     500 {object} object "Server error"
+// @description	short lived temporary token (1 minute lifespan) - \
+// @description that should be used to complete the authentication
+// @param		redirect query string true "URL encoded redirect url" example(http://localhost:3001/callback)
+// @success     302 "Redirect to the provided URL with temporary code in query param 'code'"
+// @failure     400 "Bad Request - invalid redirect URL"
+// @failure     500 "Internal Server Error"
 // @router      /authorize [GET]
 func Authorize(w http.ResponseWriter, r *http.Request) {
 	redirect := r.URL.Query().Get("redirect")
@@ -98,15 +103,20 @@ func Authorize(w http.ResponseWriter, r *http.Request) {
 }
 
 // @tags        Auth
-// @summary		Initiate the authentication flow
-// @description Initiate the authentication flow with the auth service. \
-// @description	Any external service should visit this route with a valid redirect \
-// @description	If the user is already logged in with the auth service, the auth \
-// @description	service will redirect the user back to the provided url with a \
-// @description	temporary token - that should be used to complete the authentication \
+// @summary		Get tokens from code
+// @description This is the second step of the authorization flow \
+// @description Check GET /api/authorize for more information about the first step of this flow.
+// @description The client should invoke this endpoint with the code received from the previous step.
+// @description The client shall receive a pair of access token (found in response body) \
+// @description and refresh token (found in cookie: refreshToken) after completing all the steps.
+// @description Client can act on behalf of the user after receiving the token pair
 // @accept      json
 // @produce     json
-// @failure     500 {object} object "Server error"
+// @param		code query string true "URL encoded code received from previous step" example(abcdefgh)
+// @success 200 {object} helpers.SuccessResponseModel{data=object{token=string}} "Access token returned in response body; refresh token is set in cookie 'refreshToken'"
+// @failure 	401 "If token is invalid or expired"
+// @failure 	404 "Token is related to a non-existing user"
+// @failure     500 "Internal Server error"
 // @router      /token [POST]
 func GetToken(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
@@ -130,7 +140,7 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 	u, err := models.UserModel{}.GetUserByID(id)
 	if err != nil {
 		if ve, ok := err.(apiErrors.NotFoundError); ok {
-			helpers.Response(w, http.StatusBadRequest, ve.Error())
+			helpers.Response(w, http.StatusNotFound, ve.Error())
 			return
 		}
 		log.Println(err)
@@ -154,24 +164,28 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 	helpers.Response(w, http.StatusOK, map[string]string{"token": accessToken})
 }
 
+type LoginRequestBody struct {
+	Email    string `json:"email" example:"infosliitmcc@gmail.com"`
+	Password string `json:"password" example:"password"`
+}
+
 // @tags        Auth
 // @summary     Login user
-// @description Endpoint to log in a user with credentials or session token
+// @description Endpoint to log in a user with email and password
+// @description Upon successful login user receives a pair of access token (found in response body) \
+// @description and refresh token (found in cookie: refreshToken)
 // @accept      json
 // @produce     json
-// @param       username body string true "Username"
-// @param       password body string true "Password"
-// @success     200 {object} object "Login successful, returns session info"
-// @failure     400 {object} object "Invalid request or missing parameters"
-// @failure     401 {object} object "Invalid credentials"
-// @failure     500 {object} object "Server error"
+// @param       request body object true "Request body"
+// @success 	200 {object} helpers.SuccessResponseModel{data=object{token=string}} "Access token returned in response body; refresh token is set in cookie 'refreshToken'"
+// @failure     400 "Invalid or empty body"
+// @failure     400 "email and password cannot be empty"
+// @failure     401 "Invalid credentials"
+// @failure     500 "Internal Server error"
 // @router      /login [POST]
 func Login(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	var requestBody struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	var requestBody LoginRequestBody
 
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		helpers.Response(w, http.StatusBadRequest, "Invalid or empty body")
@@ -207,15 +221,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	helpers.Response(w, http.StatusOK, map[string]string{"token": accessToken})
 }
 
-// @Tags        Auth
-// @Summary     Logout user
-// @Description Endpoint to log out a user and invalidate their session
-// @Accept      json
-// @Produce     json
-// @Success     200 {object} object "Logout successful"
-// @Failure     401 {object} object "Unauthorized / session not found"
-// @Failure     500 {object} object "Server error"
-// @Router      /logout [POST]
+// @tags        Auth
+// @summary     Logout user
+// @description Logout user. Clears the refreshToken cookie
+// @accept      json
+// @produce     json
+// @success     200 {object} helpers.SuccessResponseModel "Logout successful"
+// @failure     500 "Internal Server Error"
+// @router      /logout [POST]
 func Logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refreshToken",
@@ -251,13 +264,15 @@ func getAccessTokenFromRefresh(refreshToken string) (string, error) {
 	return accessToken, err
 }
 
-// @Tags        Auth
-// @Summary     Refresh acess token
-// @Description Refresh the access token with the refresh token
-// @Accept      json
-// @Produce     json
-// @Failure     500 {object} object "Server error"
-// @Router      /token/refresh [POST]
+// @tags        Auth
+// @summary     Refresh acess token
+// @description Refresh the access token with the refresh token
+// @accept      json
+// @produce     json
+// @success 	200 {object} helpers.SuccessResponseModel{data=object{token=string}} "Access token"
+// @failure		401 "Invalid or missing refresh token"
+// @failure     500 "Internal Server Error"
+// @router      /token/refresh [POST]
 func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	// todo: right now you can probably pass an access token and this endpoint would still work
 	token, err := r.Cookie("refreshToken")
