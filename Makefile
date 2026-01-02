@@ -4,7 +4,7 @@ run:
 	go run cmd/server/main.go
 
 build: clean docs
-	cd frontend && npm i && npm run build
+	cd frontend && npm run build
 	mkdir -p build
 	@if command -v go >/dev/null 2>&1; then \
 		go build -o server cmd/server/main.go; \

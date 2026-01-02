@@ -4,12 +4,7 @@ import { Pencil, Users } from "lucide-react";
 
 import api from "../lib/api";
 import miniLogo from "../assets/logo-small-white.png";
-
-type User = {
-  name: string;
-  email: string;
-  roles: string[];
-};
+import type { User } from "../types/user";
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
