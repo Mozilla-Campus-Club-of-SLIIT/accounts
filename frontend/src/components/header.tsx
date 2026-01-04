@@ -32,7 +32,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-1000 flex justify-between items-center px-5 py-3 shadow-lg bg-white">
+    <header className="sticky top-0 z-1000 flex justify-between items-center px-10 py-3 shadow-lg bg-white">
       <div>
         <img src={logo} width={110} className="my-3" />
       </div>
