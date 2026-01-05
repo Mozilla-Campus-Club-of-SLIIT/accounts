@@ -29,6 +29,7 @@ function App() {
             </Route>
             <Route
               path="admin"
+              element={<PrivateRoute requiredRoles={["admin"]} />}
             >
               <Route path="dashboard" element={<AdminDashboard />} />
             </Route>

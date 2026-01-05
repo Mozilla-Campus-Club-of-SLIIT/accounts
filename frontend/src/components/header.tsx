@@ -9,8 +9,11 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import api from "../lib/api";
 import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/auth";
 
 function NavigationButtons() {
+  const { user } = useAuth();
+
   const logout = async () => {
     await api.post("/api/logout");
     localStorage.removeItem("token");
@@ -19,12 +22,14 @@ function NavigationButtons() {
 
   return (
     <>
-      <Link to="/admin/dashboard">
-        <Button className="bg-primary flex items-center gap-1">
-          <img src={logoMini} width={24} />
-          <span>Admin dashboard</span>
-        </Button>
-      </Link>
+      {user?.roles?.includes("admin") && (
+        <Link to="/admin/dashboard">
+          <Button className="bg-primary flex items-center gap-1">
+            <img src={logoMini} width={24} />
+            <span>Admin dashboard</span>
+          </Button>
+        </Link>
+      )}
       <Button onClick={logout}>Logout</Button>
     </>
   );
