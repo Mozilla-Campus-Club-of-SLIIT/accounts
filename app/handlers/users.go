@@ -26,7 +26,8 @@ import (
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := models.UserModel{}.SelectAll()
 	if err != nil {
-		helpers.Response(w, http.StatusInternalServerError, err.Error())
+		log.Println(err.Error())
+		helpers.Response(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 	helpers.Response(w, http.StatusOK, users)

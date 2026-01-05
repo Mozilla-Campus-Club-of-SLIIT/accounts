@@ -22,7 +22,7 @@ type UserModel struct {
 	Private     bool              `json:"private"`
 	CreatedAt   *time.Time        `json:"createdAt" example:"2025-12-31T00:00:00Z"`
 	UpdatedAt   *time.Time        `json:"updatedAt" example:"2025-12-31T00:00:00Z"`
-	Roles       []string          `json:"roles" db:"-" example:"admin"`
+	Roles       []string          `json:"roles" example:"admin"`
 	Connections []ConnectionModel `json:"connections" db:"-"`
 }
 
@@ -76,7 +76,10 @@ func (UserModel) SelectAll() ([]UserModel, error) {
 	defer conn.Close(context.Background())
 
 	rows, err := conn.Query(context.Background(),
-		"SELECT id, name, email, createdAt, updatedAt, private FROM users",
+		`SELECT u.id, u.name, u.email, u.createdAt, u.updatedAt, u.private, array_remove(array_agg(ur.rolename), NULL) AS roles
+		FROM users u
+		LEFT JOIN userroles ur ON u.id = ur.userid
+		GROUP BY u.id`,
 	)
 	if err != nil {
 		return nil, err
