@@ -8,21 +8,23 @@ import logoMini from "../assets/logo-small-white.png";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import api from "../lib/api";
+import { Link } from "react-router-dom";
 
 function NavigationButtons() {
-
   const logout = async () => {
-    await api.post("/api/logout")
-    localStorage.removeItem("token")
-    window.location.href = "/"
-  }
+    await api.post("/api/logout");
+    localStorage.removeItem("token");
+    window.location.href = "/";
+  };
 
   return (
     <>
-      <Button className="bg-primary flex items-center gap-1">
-        <img src={logoMini} width={24} />
-        <span>Admin dashboard</span>
-      </Button>
+      <Link to="/admin/dashboard">
+        <Button className="bg-primary flex items-center gap-1">
+          <img src={logoMini} width={24} />
+          <span>Admin dashboard</span>
+        </Button>
+      </Link>
       <Button onClick={logout}>Logout</Button>
     </>
   );

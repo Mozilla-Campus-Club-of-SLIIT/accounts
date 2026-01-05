@@ -3,10 +3,11 @@ import Card from "../components/card";
 import { Pencil, Users } from "lucide-react";
 
 import api from "../lib/api";
-import miniLogo from "../assets/logo-small-white.png";
 import logo from "../assets/logo.png";
 import type { User } from "../types/user";
 import Button from "../components/button";
+import RoleChip from "../components/roleChip";
+import ProfileImage from "../components/profileImage";
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
@@ -28,13 +29,10 @@ export default function Profile() {
         <img src={logo} width={400} className="float-right opacity-20" />
       </div>
       <div className="relative mx-10">
-        <div className="grid bg-primary w-20 h-20 md:w-38 md:h-38 rounded-full justify-center content-center text-white text-3xl md:text-6xl absolute top-0 -translate-y-1/2">
-          {user.name
-            .split(" ")
-            .splice(0, 2)
-            .map((n) => n.toUpperCase()[0])
-            .join("")}
-        </div>
+        <ProfileImage
+          name={user.name}
+          className="absolute top-0 -translate-y-1/2 w-20 h-20 md:w-38 md:h-38 text-3xl md:text-6xl"
+        />
         <Button
           type="button"
           className="flex items-center gap-3 float-right mt-3"
@@ -49,16 +47,10 @@ export default function Profile() {
         {user.roles.length > 0 && (
           <>
             <h5 className="text-xl my-3">Roles</h5>
-
             <div className="flex">
-              <div className="flex items-center gap-2 bg-primary text-white text-[10px] md:text-base px-4 py-1 my-1 rounded-full">
-                <img src={miniLogo} className="w-4 md:w-5" />
-                <span>{user.roles[0]}</span>
-              </div>
+              <RoleChip highlightedRole={true} name={user.roles[0]} />
               {user.roles.slice(1).map((role) => (
-                <div className="px-4 py-1 m-1 rounded-full border border-primary inline-block text-[10px] md:text-base">
-                  {role}
-                </div>
+                <RoleChip name={role} />
               ))}
             </div>
           </>

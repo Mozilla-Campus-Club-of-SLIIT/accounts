@@ -6,6 +6,7 @@ import Profile from "./pages/profile";
 import Index from "./pages";
 import { AuthProvider } from "./contexts/auth";
 import PrivateRoute from "./components/privateRoute";
+import AdminDashboard from "./pages/admin/dashboard";
 
 function App() {
   return (
@@ -28,9 +29,8 @@ function App() {
             </Route>
             <Route
               path="admin"
-              element={<PrivateRoute requiredRoles={["admin"]} />}
             >
-              <Route index element={<>hi</>} />
+              <Route path="dashboard" element={<AdminDashboard />} />
             </Route>
           </Route>
         </Routes>
