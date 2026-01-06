@@ -4,27 +4,77 @@ import logo from "../assets/logo.png";
 import Button from "../components/button";
 import Card from "../components/card";
 import api from "../lib/api";
+import Input from "../components/input";
 
 export default function Signup() {
   const [searchParams] = useSearchParams();
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmationPassword, setConfirmationPassword] = useState("");
-
+  const nameRef = useRef<HTMLInputElement>(null);
+  const [nameError, setNameError] = useState("");
+  const emailRef = useRef<HTMLInputElement>(null);
+  const [emailError, setEmailError] = useState("");
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const [passwordError, setPasswordError] = useState("");
   const confirmationPasswordRef = useRef<HTMLInputElement>(null);
+  const [confirmationPasswordError, setConfirmationPasswordError] =
+    useState("");
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (password !== confirmationPassword) {
-      confirmationPasswordRef.current?.setCustomValidity(
-        "Confirmation password should match your password"
-      );
-      confirmationPasswordRef.current?.reportValidity();
-      return;
+
+    const nameInput = nameRef.current;
+    const emailInput = emailRef.current;
+    const passwordInput = passwordRef.current;
+    const confirmationPasswordInput = confirmationPasswordRef.current;
+
+    const nameValid = nameInput?.checkValidity();
+    const emailValid = emailInput?.checkValidity();
+    const passwordValid = passwordInput?.checkValidity();
+    const confirmationPasswordValid =
+      confirmationPasswordInput?.checkValidity();
+
+    setNameError("");
+    setEmailError("");
+    setPasswordError("");
+    setConfirmationPasswordError("");
+
+    if (!nameValid) {
+      setNameError(nameInput?.validationMessage || "");
     }
+
+    if (!emailValid) {
+      if (emailInput?.validity.typeMismatch) setEmailError("Invalid email");
+      else setEmailError(emailInput?.validationMessage || "");
+    }
+
+    if (!passwordValid) {
+      setPasswordError(passwordInput?.validationMessage || "");
+    }
+
+    if (!confirmationPasswordValid) {
+      setConfirmationPasswordError(
+        confirmationPasswordInput?.validationMessage || ""
+      );
+    }
+
+    if (passwordInput?.value !== confirmationPasswordInput?.value)
+      return setConfirmationPasswordError(
+        "Confirmation should match your password"
+      );
+
+    if (
+      !nameValid ||
+      !emailValid ||
+      !passwordValid ||
+      !confirmationPasswordValid
+    )
+      return;
+
     const response = await api.post("/api/users", {
-      body: JSON.stringify({ name: username, email, password }),
+      body: JSON.stringify({
+        name: nameInput?.value.trim(),
+        email: emailInput?.value.trim(),
+        password: passwordInput?.value.trim(),
+      }),
     });
     if (response.ok) {
       const redirect = searchParams.get("redirect");
@@ -36,7 +86,7 @@ export default function Signup() {
   return (
     <main className="grid content-center-safe justify-center-safe h-screen bg-gray-100 sm:bg-white">
       <Card className="shadow-none sm:shadow-sm mx-auto p-5 sm:p-8">
-        <form className="grid" onSubmit={handleSubmit}>
+        <form className="grid" onSubmit={handleSubmit} noValidate>
           <div>
             <img src={logo} width={110} className="my-3" />
             <h1 className="text-primary text-2xl">Welcome Back!</h1>
@@ -59,50 +109,41 @@ export default function Signup() {
           <div className="my-2">
             <fieldset className="grid">
               <label htmlFor="username">Username</label>
-              <input
+              <Input
                 type="text"
                 id="username"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                className="bg-white my-1 p-1 rounded-sm"
+                error={nameError}
+                ref={nameRef}
                 required
               />
             </fieldset>
             <fieldset className="grid">
               <label htmlFor="email">Email</label>
-              <input
+              <Input
                 type="email"
                 id="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="bg-white my-1 p-1 rounded-sm"
+                error={emailError}
+                ref={emailRef}
                 required
               />
             </fieldset>
             <fieldset className="grid">
               <label htmlFor="username">Password</label>
-              <input
+              <Input
                 type="password"
                 id="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="bg-white my-1 p-1 rounded-sm"
+                error={passwordError}
+                ref={passwordRef}
                 required
               />
             </fieldset>
             <fieldset className="grid">
               <label htmlFor="confirmPassword">Confirm password</label>
-              <input
+              <Input
                 type="password"
                 id="confirmPassword"
-                value={confirmationPassword}
+                error={confirmationPasswordError}
                 ref={confirmationPasswordRef}
-                onChange={(event) => {
-                  confirmationPasswordRef.current?.setCustomValidity("");
-                  confirmationPasswordRef.current?.reportValidity();
-                  setConfirmationPassword(event.target.value);
-                }}
-                className="bg-white my-1 p-1 rounded-sm"
                 required
               />
             </fieldset>
