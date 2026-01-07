@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -32,6 +33,9 @@ func (UserModel) Login(email string, password string) (accessToken, refreshToken
 		return "", "", err
 	}
 	defer conn.Close(context.Background())
+
+	email = strings.TrimSpace(email)
+	password = strings.TrimSpace(password)
 
 	rows, err := conn.Query(context.Background(),
 		`SELECT u.id, u.name, u.password, array_agg(ur.rolename) AS roles
@@ -132,6 +136,10 @@ func (u *UserModel) Insert() (int, error) {
 		return 0, err
 	}
 	defer conn.Close(context.Background())
+
+	u.Name = strings.TrimSpace(u.Name)
+	u.Email = strings.TrimSpace(u.Email)
+	u.Password = strings.TrimSpace(u.Password)
 
 	if u.Name == "" || u.Email == "" || u.Password == "" {
 		return 0, apiErrors.ValidationError{Msg: "name, email or password can't be empty"}

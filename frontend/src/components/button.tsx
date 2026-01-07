@@ -9,7 +9,7 @@ export default function Button({
   return (
     <button
       className={twMerge(
-        "bg-black text-white rounded-sm p-2 px-4 cursor-pointer",
+        "bg-black text-white rounded-sm p-2 px-4 cursor-pointer hover:opacity-80 transition-opacity",
         className ?? ""
       )}
       type={type}
