@@ -6,6 +6,7 @@ export type OverlayWindowProps = {
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   children: ReactNode;
   onOpen?: Function;
+  onClose?: Function
 };
 
 export default function OverlayWindow({
@@ -13,6 +14,7 @@ export default function OverlayWindow({
   isOpen,
   setIsOpen,
   onOpen,
+  onClose,
 }: OverlayWindowProps) {
   const [opened, setOpened] = useState(false);
 
@@ -32,7 +34,7 @@ export default function OverlayWindow({
     <div
       className={`${
         isOpen ? "grid" : "hidden"
-      } fixed bg-black/15 top-0 left-0 w-screen h-screen`}
+      } fixed bg-black/15 top-0 left-0 w-screen h-screen z-50`}
     >
       <div className="bg-white relative m-auto w-max h-max rounded-md p-4 shadow-2xl">
         <X
@@ -40,6 +42,7 @@ export default function OverlayWindow({
           onClick={() => {
             setIsOpen(false);
             setOpened(false);
+            if (onClose) onClose()
           }}
         />
         {children}
