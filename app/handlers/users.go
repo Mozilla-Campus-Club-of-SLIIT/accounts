@@ -267,3 +267,46 @@ func RemoveRole(w http.ResponseWriter, r *http.Request) {
 	}
 	helpers.Response(w, http.StatusOK, http.StatusText(http.StatusOK))
 }
+
+// @tags        Users
+// @summary		Delete a user
+// @description Delete a user. Admin only route
+// @security	AccessToken
+// @accept      json
+// @produce     json
+// @param		id path string true "User ID"
+// @success		200 "OK"
+// @failure		400 "Invalid user id"
+// @failure		401 "Not logged in or invalid token"
+// @failure		403 "Forbidden (admin only route)"
+// @failure		403 "Cannot delete yourself"
+// @failure 	404 "User not found"
+// @failure     500 "Internal Server Error"
+// @router      /users/{id}/roles/{role} [DELETE]
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	requestedUserId := r.PathValue("id")
+	requestedUserUuid := uuid.FromStringOrNil(requestedUserId)
+	ctxUser := r.Context().Value(middlewares.UserContext{}).(*models.UserModel)
+
+	if requestedUserUuid == uuid.Nil {
+		helpers.Response(w, http.StatusBadRequest, "Invalid user id")
+		return
+	}
+
+	if requestedUserId == ctxUser.ID.String() {
+		helpers.Response(w, http.StatusForbidden, "Cannot delete yourself")
+		return
+	}
+
+	u := models.UserModel{ID: requestedUserUuid}
+	rows, err := u.Delete()
+	if rows == 0 {
+		helpers.Response(w, http.StatusNotFound, "User not found")
+		return
+	}
+	if err != nil {
+		helpers.Response(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+	helpers.Response(w, http.StatusOK, http.StatusText(http.StatusOK))
+}
