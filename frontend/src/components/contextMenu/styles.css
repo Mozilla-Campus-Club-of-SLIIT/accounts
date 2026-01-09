@@ -1,0 +1,47 @@
+/**
+  Warning: this context menu uses select menu styling features that has limited browser support at the time
+  Tested on: Chrome (Linux)
+
+  Reference: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Customizable_select
+*/
+
+select.select-context-menu,
+select.select-context-menu::picker(select) {
+  appearance: base-select;
+  cursor: pointer;
+}
+
+select.select-context-menu {
+  padding: 0.25rem;
+  border-radius: 10rem;
+  transition: all 0.4s ease-in-out;
+}
+
+select.select-context-menu:hover {
+  background-color: var(--color-gray-200);
+}
+
+select.select-context-menu::picker(select) {
+  top: -0.5rem;
+  transform: translateX(0.5rem);
+  position-area: bottom left;
+  position-try: bottom left, bottom right;
+  border: none;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+select.select-context-menu::picker-icon {
+  display: none;
+}
+
+select.select-context-menu > option {
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.4s ease-in-out;
+}
+
+select.select-context-menu > option::checkmark {
+  display: none;
+}
