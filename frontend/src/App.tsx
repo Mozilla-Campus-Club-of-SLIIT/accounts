@@ -7,35 +7,38 @@ import Index from "./pages";
 import { AuthProvider } from "./contexts/auth";
 import PrivateRoute from "./components/privateRoute";
 import AdminDashboard from "./pages/admin/dashboard";
+import { AlertProvider } from "./contexts/alert";
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="login" element={<Login />} />
-          <Route path="signup" element={<Signup />} />
-          <Route
-            element={
-              <div className="min-h-screen">
-                <Header />
-                <Outlet />
-              </div>
-            }
-          >
-            <Route index element={<Index />} />
-            <Route element={<PrivateRoute />}>
-              <Route path="profile" element={<Profile />} />
-            </Route>
+      <AlertProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="login" element={<Login />} />
+            <Route path="signup" element={<Signup />} />
             <Route
-              path="admin"
-              element={<PrivateRoute requiredRoles={["admin"]} />}
+              element={
+                <div className="min-h-screen">
+                  <Header />
+                  <Outlet />
+                </div>
+              }
             >
-              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route index element={<Index />} />
+              <Route element={<PrivateRoute />}>
+                <Route path="profile" element={<Profile />} />
+              </Route>
+              <Route
+                path="admin"
+                element={<PrivateRoute requiredRoles={["admin"]} />}
+              >
+                <Route path="dashboard" element={<AdminDashboard />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </AlertProvider>
     </AuthProvider>
   );
 }
