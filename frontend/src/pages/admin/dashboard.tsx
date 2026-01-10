@@ -1,5 +1,5 @@
-import RolesSideBar from "./roles";
-import UsersView from "./users";
+import RolesSideBar from "./ui/roles";
+import UsersView from "./ui/users";
 
 export default function AdminDashboard() {
   return (

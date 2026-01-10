@@ -282,7 +282,7 @@ func RemoveRole(w http.ResponseWriter, r *http.Request) {
 // @failure		403 "Cannot delete yourself"
 // @failure 	404 "User not found"
 // @failure     500 "Internal Server Error"
-// @router      /users/{id}/roles/{role} [DELETE]
+// @router      /users/{id} [DELETE]
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	requestedUserId := r.PathValue("id")
 	requestedUserUuid := uuid.FromStringOrNil(requestedUserId)

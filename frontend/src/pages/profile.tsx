@@ -47,7 +47,7 @@ export default function Profile() {
         {user.roles.length > 0 && (
           <>
             <h5 className="text-xl my-3">Roles</h5>
-            <div className="flex">
+            <div className="flex gap-2">
               <RoleChip highlightedRole={true} name={user.roles[0]} />
               {user.roles.slice(1).map((role) => (
                 <RoleChip name={role} />

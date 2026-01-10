@@ -765,6 +765,53 @@ const docTemplate = `{
                     }
                 }
             },
+            "delete": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
+                "description": "Delete a user. Admin only route",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Invalid user id"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Cannot delete yourself"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
             "patch": {
                 "security": [
                     {
@@ -863,7 +910,7 @@ const docTemplate = `{
                         "AccessToken": []
                     }
                 ],
-                "description": "Delete a user. Admin only route",
+                "description": "Remove an existing role from the user",
                 "consumes": [
                     "application/json"
                 ],
@@ -873,12 +920,19 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Delete a user",
+                "summary": "Remove an existing role from the user",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "User ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Role name",
+                        "name": "role",
                         "in": "path",
                         "required": true
                     }
@@ -894,10 +948,10 @@ const docTemplate = `{
                         "description": "Not logged in or invalid token"
                     },
                     "403": {
-                        "description": "Cannot delete yourself"
+                        "description": "Cannot remove admin from yourself"
                     },
                     "404": {
-                        "description": "User not found"
+                        "description": "User or role not found"
                     },
                     "500": {
                         "description": "Internal Server Error"
