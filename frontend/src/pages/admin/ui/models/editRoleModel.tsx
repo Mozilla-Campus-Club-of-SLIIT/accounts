@@ -32,8 +32,8 @@ export default function EditRoleModel({
 
   useEffect(() => {
     if (!actionUser) return setUserRoles([]);
-    setUserRoles(actionUser.roles)
-  }, [actionUser?.id]);
+    setUserRoles(actionUser.roles);
+  }, [actionUser, actionUser?.id, actionUser?.roles]);
 
   const addRole = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,11 +53,19 @@ export default function EditRoleModel({
     setRefreshUsers((prev) => !prev);
   };
 
+  const deleteUserRole = async (role: string) => {
+    if (actionUser === null) return setIsOpen(false);
+    const response = await api.del(`/api/users/${actionUser.id}/roles/${role}`);
+    console.log(response);
+    setRefreshUsers((prev) => !prev);
+    setIsOpen(false);
+  };
+
   return (
     <OverlayWindow
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      className="max-w-md"
+      className="max-w-md w-md"
       onClose={() => {
         setActionUser(null);
       }}
@@ -74,11 +82,14 @@ export default function EditRoleModel({
                 key={`userrole-${actionUser.id}-${role}-${index}`}
                 name={role}
                 showDeleteIcon={true}
+                onDeleteIconClick={() => deleteUserRole(role)}
               />
             ))}
           </div>
           <form onSubmit={addRole}>
-            <h5 className="my-2 mt-5">Add a new role to <b>{actionUser.name}</b></h5>
+            <h5 className="my-2 mt-5">
+              Add a new role to <b>{actionUser.name}</b>
+            </h5>
             <select
               className="w-full p-1 m-1 ring-1 ring-gray-200"
               ref={roleSelectRef}

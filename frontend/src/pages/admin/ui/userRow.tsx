@@ -5,6 +5,7 @@ import { relativeTime } from "../../../utils/relativeTime";
 import RoleChip from "../../../components/roleChip";
 import ContextMenu from "../../../components/contextMenu";
 import { Trash2 } from "lucide-react";
+import api from "../../../lib/api";
 
 export default function UserRow({
   user,
@@ -13,6 +14,7 @@ export default function UserRow({
   deletingUser,
   setActionUser,
   setAddRoleMenuOpen,
+  setRefreshUsers,
 }: {
   user: User;
   setDeleteConfirmationOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -21,8 +23,15 @@ export default function UserRow({
   deletingUser: User | null;
   setActionUser: React.Dispatch<React.SetStateAction<User | null>>;
   actionUser: User | null;
+  setRefreshUsers: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const isDeletingUser = deletingUser?.id === user.id;
+
+  const deleteUserRole = async (role: string) => {
+    const response = await api.del(`/api/users/${user.id}/roles/${role}`);
+    console.log(response);
+    setRefreshUsers((prev) => !prev);
+  };
 
   return (
     <tr
@@ -61,6 +70,7 @@ export default function UserRow({
               className="text-xs md:text-xs gap-x-1 px-2"
               logoClassName="w-3 md:w-3"
               showDeleteIcon={true}
+              onDeleteIconClick={() => deleteUserRole(user.roles[0])}
             />
           )}
           {user.roles.length > 1 && (

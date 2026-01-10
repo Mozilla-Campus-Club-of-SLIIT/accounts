@@ -78,6 +78,7 @@ export default function UsersView() {
                 actionUser={actionUser}
                 setActionUser={setActionUser}
                 setAddRoleMenuOpen={setAddRoleMenuOpen}
+                setRefreshUsers={setRefreshUsers}
               />
             ))}
           </tbody>
