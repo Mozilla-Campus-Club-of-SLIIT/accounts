@@ -3,8 +3,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import logo from "../assets/logo.png";
 import Button from "../components/button";
 import Card from "../components/card";
-import api from "../lib/api";
 import Input from "../components/input";
+import { useAlert } from "../contexts/alert";
 
 export default function Login() {
   const emailRef = useRef<HTMLInputElement>(null);
@@ -12,6 +12,7 @@ export default function Login() {
   const passwordRef = useRef<HTMLInputElement>(null);
   const [passwordError, setPasswordError] = useState("");
   const [searchParams] = useSearchParams();
+  const { dispatchAlert } = useAlert();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,18 +34,36 @@ export default function Login() {
 
     if (!emailValid || !passwordValid) return;
 
-    const response = await api.post("/api/login", {
-      body: JSON.stringify({
-        email: emailInput?.value.trim(),
-        password: passwordInput?.value.trim(),
-      }),
-    });
-    const result = await response.json();
-    if (response.ok && result.data) {
-      localStorage.setItem("token", result.data.token);
-      const redirect = searchParams.get("redirect");
-      if (redirect) window.location.href = redirect;
-      else window.location.href = "/";
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: emailInput?.value.trim(),
+          password: passwordInput?.value.trim(),
+        }),
+      });
+      const result = await response.json();
+      if (response.ok && result.data) {
+        localStorage.setItem("token", result.data.token);
+        const redirect = searchParams.get("redirect");
+        if (redirect) window.location.href = redirect;
+        else window.location.href = "/";
+      } else {
+        dispatchAlert({
+          type: "error",
+          message: result?.error?.message || "Something unexpected happened",
+          position: "top center",
+        });
+      }
+    } catch (error) {
+      dispatchAlert({
+        type: "error",
+        message: "Something unexpected happened",
+        position: "top center",
+      });
     }
   };
 

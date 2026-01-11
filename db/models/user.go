@@ -141,10 +141,6 @@ func (u *UserModel) Insert() (int, error) {
 	u.Email = strings.TrimSpace(u.Email)
 	u.Password = strings.TrimSpace(u.Password)
 
-	if u.Name == "" || u.Email == "" || u.Password == "" {
-		return 0, apiErrors.ValidationError{Msg: "name, email or password can't be empty"}
-	}
-
 	hashedPass := helpers.HashPassword(u.Password)
 	t, err := conn.Exec(
 		context.Background(),

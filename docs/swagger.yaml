@@ -131,7 +131,7 @@ paths:
                   type: object
               type: object
         "400":
-          description: email and password cannot be empty
+          description: Invalid request body
         "401":
           description: Invalid credentials
         "500":
@@ -203,7 +203,7 @@ paths:
         "201":
           description: Created
         "400":
-          description: name cannot be empty
+          description: Invalid request body
         "401":
           description: Not logged in or invalid token
         "403":
@@ -418,9 +418,9 @@ paths:
           properties:
             email:
               type: string
-            password:
+            name:
               type: string
-            username:
+            password:
               type: string
           type: object
       produces:
@@ -429,7 +429,7 @@ paths:
         "201":
           description: Created
         "400":
-          description: name, email or password can't be empty
+          description: Invalid request body
         "409":
           description: Username or email already in use
         "500":

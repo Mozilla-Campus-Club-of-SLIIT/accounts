@@ -108,7 +108,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "email and password cannot be empty"
+                        "description": "Invalid request body"
                     },
                     "401": {
                         "description": "Invalid credentials"
@@ -229,7 +229,7 @@ const docTemplate = `{
                         "description": "Created"
                     },
                     "400": {
-                        "description": "name cannot be empty"
+                        "description": "Invalid request body"
                     },
                     "401": {
                         "description": "Not logged in or invalid token"
@@ -573,10 +573,10 @@ const docTemplate = `{
                                 "email": {
                                     "type": "string"
                                 },
-                                "password": {
+                                "name": {
                                     "type": "string"
                                 },
-                                "username": {
+                                "password": {
                                     "type": "string"
                                 }
                             }
@@ -588,7 +588,7 @@ const docTemplate = `{
                         "description": "Created"
                     },
                     "400": {
-                        "description": "name, email or password can't be empty"
+                        "description": "Invalid request body"
                     },
                     "409": {
                         "description": "Username or email already in use"

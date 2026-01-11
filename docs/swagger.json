@@ -106,7 +106,7 @@
                         }
                     },
                     "400": {
-                        "description": "email and password cannot be empty"
+                        "description": "Invalid request body"
                     },
                     "401": {
                         "description": "Invalid credentials"
@@ -227,7 +227,7 @@
                         "description": "Created"
                     },
                     "400": {
-                        "description": "name cannot be empty"
+                        "description": "Invalid request body"
                     },
                     "401": {
                         "description": "Not logged in or invalid token"
@@ -571,10 +571,10 @@
                                 "email": {
                                     "type": "string"
                                 },
-                                "password": {
+                                "name": {
                                     "type": "string"
                                 },
-                                "username": {
+                                "password": {
                                     "type": "string"
                                 }
                             }
@@ -586,7 +586,7 @@
                         "description": "Created"
                     },
                     "400": {
-                        "description": "name, email or password can't be empty"
+                        "description": "Invalid request body"
                     },
                     "409": {
                         "description": "Username or email already in use"

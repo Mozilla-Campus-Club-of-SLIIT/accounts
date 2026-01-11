@@ -33,7 +33,7 @@ export default function CreateRoleModel({
     });
     const result = await response.json();
 
-    if (!response.ok) return setNewRoleError(result.error.message);
+    if (!response.ok) return setNewRoleError(result?.error?.message?.[0]?.reason ?? "An unexpected error occurred");
 
     setIsOpen(false);
     setRefreshRoles((prev) => !prev);
