@@ -6,8 +6,8 @@ import (
 )
 
 type ErrorResponseModel struct {
-	Code    int    `json:"code" example:"500"`
-	Message string `json:"message" example:"Internal server error"`
+	Code    int `json:"code" example:"500"`
+	Message any `json:"message" example:"Internal server error"`
 }
 
 type SuccessResponseModel struct {
@@ -32,7 +32,7 @@ func Response(w http.ResponseWriter, status int, data any) {
 	_ = json.NewEncoder(w).Encode(FailureResponseModel{
 		Error: ErrorResponseModel{
 			Code:    status,
-			Message: data.(string),
+			Message: data,
 		},
 	})
 }

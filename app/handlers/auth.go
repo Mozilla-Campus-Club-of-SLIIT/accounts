@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -169,8 +170,8 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 }
 
 type LoginRequestBody struct {
-	Email    string `json:"email" example:"infosliitmcc@gmail.com"`
-	Password string `json:"password" example:"password"`
+	Email    string `json:"email" example:"infosliitmcc@gmail.com" validate:"required,email"`
+	Password string `json:"password" example:"password" validate:"required"`
 }
 
 // @tags        Auth
@@ -182,8 +183,7 @@ type LoginRequestBody struct {
 // @produce     json
 // @param       request body object true "Request body"
 // @success 	200 {object} helpers.SuccessResponseModel{data=object{token=string}} "Access token returned in response body; refresh token is set in cookie 'refreshToken'"
-// @failure     400 "Invalid or empty body"
-// @failure     400 "email and password cannot be empty"
+// @failure     400 "Invalid request body"
 // @failure     401 "Invalid credentials"
 // @failure     500 "Internal Server error"
 // @router      /login [POST]
@@ -196,8 +196,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		helpers.Response(w, http.StatusBadRequest, "Invalid or empty body")
 		return
 	}
-	if requestBody.Email == "" || requestBody.Password == "" {
-		helpers.Response(w, http.StatusBadRequest, "email and password cannot be empty")
+
+	errs := helpers.Validate(requestBody)
+	if errs != nil {
+		fmt.Println(errs)
+		helpers.Response(w, http.StatusBadRequest, errs)
 		return
 	}
 
