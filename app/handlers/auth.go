@@ -17,6 +17,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 	"github.com/sliitmozilla/accounts/app/middlewares"
+	"github.com/sliitmozilla/accounts/config"
 	"github.com/sliitmozilla/accounts/db"
 	"github.com/sliitmozilla/accounts/db/models"
 	apiErrors "github.com/sliitmozilla/accounts/errors"
@@ -42,6 +43,8 @@ func GetSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func createAndStoreCode(id string) ([]byte, error) {
+	c := config.GetConfig()
+
 	code := make([]byte, 10)
 	rand.Read(code)
 	redisClient := db.ConnectRedis()
@@ -51,7 +54,7 @@ func createAndStoreCode(id string) ([]byte, error) {
 		context.Background(),
 		"accounts:code:"+base64.URLEncoding.EncodeToString(code),
 		id,
-		time.Duration(time.Minute),
+		time.Duration(c.Lifespan.AuthorizationCode*time.Second),
 	)
 
 	return code, s.Err()
@@ -119,6 +122,7 @@ func Authorize(w http.ResponseWriter, r *http.Request) {
 // @failure     500 "Internal Server error"
 // @router      /token [POST]
 func GetToken(w http.ResponseWriter, r *http.Request) {
+	c := config.GetConfig()
 	code := r.URL.Query().Get("code")
 	redisClient := db.ConnectRedis()
 	res := redisClient.Get(context.Background(), "accounts:code:"+code)
@@ -159,7 +163,7 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 		Value:    refreshToken,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(30 * 24 * time.Hour),
+		Expires:  time.Now().Add(c.Lifespan.RefreshToken + time.Second),
 	})
 	helpers.Response(w, http.StatusOK, map[string]string{"token": accessToken})
 }
@@ -184,6 +188,7 @@ type LoginRequestBody struct {
 // @failure     500 "Internal Server error"
 // @router      /login [POST]
 func Login(w http.ResponseWriter, r *http.Request) {
+	c := config.GetConfig()
 	defer r.Body.Close()
 	var requestBody LoginRequestBody
 
@@ -216,7 +221,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		Value:    refreshToken,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(30 * 24 * time.Hour),
+		Expires:  time.Now().Add(c.Lifespan.RefreshToken * time.Second),
 	})
 	helpers.Response(w, http.StatusOK, map[string]string{"token": accessToken})
 }

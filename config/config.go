@@ -6,13 +6,20 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"time"
 )
 
-// Config : struct
+type Lifespan struct {
+	AccessToken       time.Duration `json:"accessToken"`
+	RefreshToken      time.Duration `json:"refreshToken"`
+	AuthorizationCode time.Duration `json:"authorizationCode"`
+}
+
 type Config struct {
-	Environment string `json:"env"`
-	Host        string `json:"host"`
-	Port        string `json:"port"`
+	Environment string   `json:"env"`
+	Host        string   `json:"host"`
+	Port        string   `json:"port"`
+	Lifespan    Lifespan `json:"lifespan"`
 }
 
 var config *Config
