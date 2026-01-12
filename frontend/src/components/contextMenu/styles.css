@@ -1,6 +1,8 @@
 /**
   Warning: this context menu uses select menu styling features that has limited browser support at the time
-  Tested on: Chrome (Linux)
+  Tested on:
+    Chrome (Linux) - Compatible
+    Mozilla Firefox (Linux) - Not compatible (menu is rendered, however no styles)
 
   Reference: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Customizable_select
 */
