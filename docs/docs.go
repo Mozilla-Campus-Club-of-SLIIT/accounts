@@ -981,6 +981,9 @@ const docTemplate = `{
                 },
                 "providerUserId": {
                     "type": "string"
+                },
+                "providerUserName": {
+                    "type": "string"
                 }
             }
         },

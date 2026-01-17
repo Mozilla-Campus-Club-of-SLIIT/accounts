@@ -16,6 +16,8 @@ definitions:
         type: string
       providerUserId:
         type: string
+      providerUserName:
+        type: string
     type: object
   models.RoleModel:
     properties:

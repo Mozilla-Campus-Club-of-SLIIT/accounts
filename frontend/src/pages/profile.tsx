@@ -23,6 +23,12 @@ export default function Profile() {
 
   if (user === null) return;
 
+  const linkGithub = async () => {
+    const response = await api.post("/api/connections/github/link")
+    const result = await response.json()
+    window.location = result.data
+  }
+
   return (
     <div className="grid">
       <div className="bg-[#F47624]/15 p-5 px-10 pt-20">
@@ -56,6 +62,7 @@ export default function Profile() {
           </>
         )}
       </div>
+      <button onClick={linkGithub}>Github</button>
       <Card className="mx-10 my-5">
         <h3 className="text-xl md:text-4xl my-4">Information</h3>
         <div>
