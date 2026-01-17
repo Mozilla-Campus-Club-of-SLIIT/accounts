@@ -2,6 +2,38 @@ basePath: /api
 consumes:
 - application/json
 definitions:
+  handlers.LoginRequestBody:
+    properties:
+      email:
+        example: infosliitmcc@gmail.com
+        type: string
+      password:
+        example: password
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.createUserBody:
+    properties:
+      email:
+        example: infosliitmcc@gmail.com
+        maxLength: 50
+        type: string
+      name:
+        example: sliitmozillian
+        maxLength: 30
+        minLength: 3
+        type: string
+      password:
+        example: password
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
   helpers.SuccessResponseModel:
     properties:
       data: {}
@@ -107,8 +139,31 @@ paths:
       summary: Initiate the authentication flow
       tags:
       - Auth
+  /connections/github/:
+    delete:
+      consumes:
+      - application/json
+      description: Unlink Github account from a user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Not logged in or invalid token
+        "404":
+          description: User or provider not found
+        "500":
+          description: Internal Server Error
+      security:
+      - AccessToken: []
+      summary: Unlink Github account from a user
+      tags:
+      - Connections
   /connections/github/callback:
     post:
+      consumes:
+      - application/json
       description: |-
         Handles the OAuth authorization callback sent from Github
         This endpoint is not meant to be invoked directly, but from Github once authorized from their platform
@@ -124,6 +179,8 @@ paths:
         name: code
         required: true
         type: string
+      produces:
+      - application/json
       responses:
         "302":
           description: Redirect to profile after successful linking
@@ -140,10 +197,14 @@ paths:
       - Connections
   /connections/github/link:
     post:
+      consumes:
+      - application/json
       description: |-
         Initiates the request to link an account with Github
         If the user is logged in, redirect to Github OAuth authorization endpoint to initiate the Github browser authorization flow
         See more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+      produces:
+      - application/json
       responses:
         "302":
           description: Redirect to Github OAuth authorization endpoint
@@ -169,7 +230,7 @@ paths:
         name: request
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.LoginRequestBody'
       produces:
       - application/json
       responses:
@@ -471,14 +532,7 @@ paths:
         name: request
         required: true
         schema:
-          properties:
-            email:
-              type: string
-            name:
-              type: string
-            password:
-              type: string
-          type: object
+          $ref: '#/definitions/handlers.createUserBody'
       produces:
       - application/json
       responses:

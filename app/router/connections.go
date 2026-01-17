@@ -17,6 +17,7 @@ func (b ConnectionsRoute) Routes() chi.Router {
 	r.Route("/github", func(githubRoutes chi.Router) {
 		githubRoutes.With(middlewares.RequireLogin).Post("/link", connectionHandler.LinkGithub)
 		githubRoutes.Get("/callback", connectionHandler.CallbackGithub)
+		githubRoutes.With(middlewares.RequireLogin).Delete("/", connectionHandler.UnlinkGithub)
 	})
 
 	return r

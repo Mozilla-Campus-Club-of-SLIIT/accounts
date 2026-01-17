@@ -24,6 +24,8 @@ import (
 // @description to initiate the Github browser authorization flow
 // @description See more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
 // @security 	AccessToken
+// @accept      json
+// @produce     json
 // @success     302 "Redirect to Github OAuth authorization endpoint"
 // @failure     401 "Not logged in or invalid token"
 // @failure     500 "Internal Server Error"
@@ -118,6 +120,8 @@ func getGhAccessToken(w http.ResponseWriter, r *http.Request) string {
 // @description This endpoint is not meant to be invoked directly, but from Github once authorized from their platform
 // @description See more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
 // @security 	AccessToken
+// @accept      json
+// @produce     json
 // @param 		state query string true "([Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps))"
 // @param		code query string true "Set by Github OAuth. ([Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps))"
 // @success     302 "Redirect to profile after successful linking"
@@ -161,4 +165,30 @@ func CallbackGithub(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/profile", http.StatusTemporaryRedirect)
+}
+
+// @tags        Connections
+// @summary		Unlink Github account from a user
+// @description Unlink Github account from a user
+// @security	AccessToken
+// @accept      json
+// @produce     json
+// @success		200 "OK"
+// @failure		401 "Not logged in or invalid token"
+// @failure 	404 "User or provider not found"
+// @failure     500 "Internal Server Error"
+// @router      /connections/github/ [DELETE]
+func UnlinkGithub(w http.ResponseWriter, r *http.Request) {
+	ctxUser := r.Context().Value(middlewares.UserContext{}).(*models.UserModel)
+	c := models.ConnectionModel{UserId: ctxUser.ID.String()}
+	rows, err := c.Delete()
+	if rows == 0 {
+		helpers.Response(w, http.StatusNotFound, "User or provider not found")
+		return
+	}
+	if err != nil {
+		helpers.Response(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+	helpers.Response(w, http.StatusOK, http.StatusText(http.StatusOK))
 }

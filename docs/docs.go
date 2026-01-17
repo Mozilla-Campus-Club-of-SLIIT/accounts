@@ -59,6 +59,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/connections/github/": {
+            "delete": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
+                "description": "Unlink Github account from a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Connections"
+                ],
+                "summary": "Unlink Github account from a user",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "404": {
+                        "description": "User or provider not found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/connections/github/callback": {
             "post": {
                 "security": [
@@ -67,6 +101,12 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Handles the OAuth authorization callback sent from Github\nThis endpoint is not meant to be invoked directly, but from Github once authorized from their platform\nSee more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Connections"
                 ],
@@ -111,6 +151,12 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Initiates the request to link an account with Github\nIf the user is logged in, redirect to Github OAuth authorization endpoint to initiate the Github browser authorization flow\nSee more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Connections"
                 ],
@@ -148,7 +194,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.LoginRequestBody"
                         }
                     }
                 ],
@@ -637,18 +683,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "email": {
-                                    "type": "string"
-                                },
-                                "name": {
-                                    "type": "string"
-                                },
-                                "password": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/handlers.createUserBody"
                         }
                     }
                 ],
@@ -1030,6 +1065,49 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.LoginRequestBody": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "infosliitmcc@gmail.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "password"
+                }
+            }
+        },
+        "handlers.createUserBody": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "infosliitmcc@gmail.com"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3,
+                    "example": "sliitmozillian"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "password"
+                }
+            }
+        },
         "helpers.SuccessResponseModel": {
             "type": "object",
             "properties": {

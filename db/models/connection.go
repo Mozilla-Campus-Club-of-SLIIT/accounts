@@ -48,3 +48,18 @@ func (c *ConnectionModel) Insert() (int, error) {
 
 	return int(t.RowsAffected()), nil
 }
+
+func (c *ConnectionModel) Delete() (int, error) {
+	conn, err := db.ConnectDB()
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Close(context.Background())
+
+	t, err := conn.Exec(
+		context.Background(),
+		"DELETE FROM UserConnections WHERE userid=$1 AND provider=$2",
+		c.UserId, c.Provider,
+	)
+	return int(t.RowsAffected()), err
+}
