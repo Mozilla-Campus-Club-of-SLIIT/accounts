@@ -107,6 +107,55 @@ paths:
       summary: Initiate the authentication flow
       tags:
       - Auth
+  /connections/github/callback:
+    post:
+      description: |-
+        Handles the OAuth authorization callback sent from Github
+        This endpoint is not meant to be invoked directly, but from Github once authorized from their platform
+        See more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+      parameters:
+      - description: ([Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps))
+        in: query
+        name: state
+        required: true
+        type: string
+      - description: Set by Github OAuth. ([Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps))
+        in: query
+        name: code
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Redirect to profile after successful linking
+        "404":
+          description: User or provider invalid (not found)
+        "409":
+          description: Already linked
+        "500":
+          description: Internal Server Error
+      security:
+      - AccessToken: []
+      summary: Handles the OAuth authorization callback sent from Github
+      tags:
+      - Connections
+  /connections/github/link:
+    post:
+      description: |-
+        Initiates the request to link an account with Github
+        If the user is logged in, redirect to Github OAuth authorization endpoint to initiate the Github browser authorization flow
+        See more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+      responses:
+        "302":
+          description: Redirect to Github OAuth authorization endpoint
+        "401":
+          description: Not logged in or invalid token
+        "500":
+          description: Internal Server Error
+      security:
+      - AccessToken: []
+      summary: Initiates the request to link an account with Github
+      tags:
+      - Connections
   /login:
     post:
       consumes:

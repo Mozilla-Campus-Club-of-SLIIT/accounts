@@ -17,6 +17,17 @@ import (
 	"github.com/sliitmozilla/accounts/helpers"
 )
 
+// @tags        Connections
+// @summary		Initiates the request to link an account with Github
+// @description Initiates the request to link an account with Github
+// @description If the user is logged in, redirect to Github OAuth authorization endpoint \
+// @description to initiate the Github browser authorization flow
+// @description See more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+// @security 	AccessToken
+// @success     302 "Redirect to Github OAuth authorization endpoint"
+// @failure     401 "Not logged in or invalid token"
+// @failure     500 "Internal Server Error"
+// @router      /connections/github/link [POST]
 func LinkGithub(w http.ResponseWriter, r *http.Request) {
 	godotenv.Load()
 
@@ -101,6 +112,19 @@ func getGhAccessToken(w http.ResponseWriter, r *http.Request) string {
 	return body.AccessToken
 }
 
+// @tags        Connections
+// @summary		Handles the OAuth authorization callback sent from Github
+// @description Handles the OAuth authorization callback sent from Github
+// @description This endpoint is not meant to be invoked directly, but from Github once authorized from their platform
+// @description See more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+// @security 	AccessToken
+// @param 		state query string true "([Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps))"
+// @param		code query string true "Set by Github OAuth. ([Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps))"
+// @success     302 "Redirect to profile after successful linking"
+// @failure     404 "User or provider invalid (not found)"
+// @failure 	409 "Already linked"
+// @failure     500 "Internal Server Error"
+// @router      /connections/github/callback [POST]
 func CallbackGithub(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 
