@@ -181,7 +181,7 @@ type LoginRequestBody struct {
 // @description and refresh token (found in cookie: refreshToken)
 // @accept      json
 // @produce     json
-// @param       request body object true "Request body"
+// @param       request body LoginRequestBody true "Request body"
 // @success 	200 {object} helpers.SuccessResponseModel{data=object{token=string}} "Access token returned in response body; refresh token is set in cookie 'refreshToken'"
 // @failure     400 "Invalid request body"
 // @failure     401 "Invalid credentials"
