@@ -971,19 +971,24 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "linkedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2025-12-31T00:00:00Z"
                 },
                 "provider": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "github"
                 },
                 "providerAccountEmail": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "infosliitmcc@gmail.com"
                 },
                 "providerUserId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1"
                 },
                 "providerUserName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "sliitmozillian"
                 }
             }
         },

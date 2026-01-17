@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sliitmozilla/accounts/app/middlewares"
 	"github.com/sliitmozilla/accounts/db/models"
+	apiErrors "github.com/sliitmozilla/accounts/errors"
 	"github.com/sliitmozilla/accounts/helpers"
 )
 
@@ -123,6 +124,13 @@ func CallbackGithub(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := connection.Insert(); err != nil {
+		if ve, ok := err.(apiErrors.NotFoundError); ok {
+			helpers.Response(w, http.StatusNotFound, ve.Error())
+			return
+		} else if ve, ok := err.(apiErrors.DuplicateError); ok {
+			helpers.Response(w, http.StatusConflict, ve.Error())
+			return
+		}
 		log.Println(err.Error())
 		helpers.Response(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return

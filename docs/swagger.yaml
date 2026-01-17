@@ -9,14 +9,19 @@ definitions:
   models.ConnectionModel:
     properties:
       linkedAt:
+        example: "2025-12-31T00:00:00Z"
         type: string
       provider:
+        example: github
         type: string
       providerAccountEmail:
+        example: infosliitmcc@gmail.com
         type: string
       providerUserId:
+        example: "1"
         type: string
       providerUserName:
+        example: sliitmozillian
         type: string
     type: object
   models.RoleModel:

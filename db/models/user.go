@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -101,11 +102,28 @@ func (UserModel) GetUserByID(id uuid.UUID) (u UserModel, err error) {
 	defer conn.Close(context.Background())
 
 	rows, err := conn.Query(context.Background(),
-		`SELECT u.id, u.name, u.email, u.createdAt, u.updatedAt, u.private, array_agg(ur.rolename) AS roles
+		`SELECT
+    	u.id,
+    	u.name,
+    	u.email,
+    	u.createdat,
+    	u.updatedat,
+    	u.private,
+    	array_agg(DISTINCT ur.rolename) AS roles,
+    	(SELECT json_agg(json_build_object(
+            'provider', uc.provider,
+            'providerUserId', uc.provideruserid,
+            'providerUserName', uc.providerusername,
+            'providerAccountEmail', uc.provideraccountemail,
+            'linkedAt', to_char(uc.linkedat, 'YYYY-MM-DD"T"HH24:MI:SSZ')
+        ))
+		FROM userconnections uc
+      	WHERE uc.userid = u.id
+    	) AS connections
 		FROM users u
 		LEFT JOIN userroles ur ON u.id = ur.userid
-		WHERE id = $1
-		GROUP BY u.id`,
+		WHERE u.id = $1
+		GROUP BY u.id;`,
 		id.String(),
 	)
 	if err != nil {
@@ -118,7 +136,9 @@ func (UserModel) GetUserByID(id uuid.UUID) (u UserModel, err error) {
 
 	u = UserModel{}
 	var roles pgtype.Array[pgtype.Text]
-	rows.Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt, &u.UpdatedAt, &u.Private, &roles)
+	var connectionsJSON []byte
+
+	rows.Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt, &u.UpdatedAt, &u.Private, &roles, &connectionsJSON)
 	// assign roles
 	u.Roles = []string{}
 	for _, role := range roles.Elements {
@@ -126,6 +146,8 @@ func (UserModel) GetUserByID(id uuid.UUID) (u UserModel, err error) {
 			u.Roles = append(u.Roles, role.String)
 		}
 	}
+	// assign connections
+	json.Unmarshal(connectionsJSON, &u.Connections)
 
 	return
 }
