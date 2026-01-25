@@ -23,6 +23,12 @@ export default function Profile() {
 
   if (user === null) return;
 
+  const linkGithub = async () => {
+    const response = await api.post("/api/connections/github/link")
+    const result = await response.json()
+    window.location = result.data
+  }
+
   return (
     <div className="grid">
       {/* Banner section */}
@@ -71,12 +77,9 @@ export default function Profile() {
           </>
         )}
       </div>
-
-      {/* Information card */}
-      <Card className="mx-4 sm:mx-6 md:mx-10 my-4 sm:my-5 p-4 sm:p-5">
-        <h3 className="text-lg sm:text-xl md:text-2xl lg:text-4xl my-2 sm:my-4 font-semibold">
-          Information
-        </h3>
+      <button onClick={linkGithub}>Github</button>
+      <Card className="mx-10 my-5">
+        <h3 className="text-xl md:text-4xl my-4">Information</h3>
         <div>
           <h5 className="flex gap-2 items-center text-sm sm:text-base md:text-xl my-2 text-primary">
             <Users className="size-4 sm:size-5" />

@@ -34,9 +34,9 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 type createUserBody struct {
-	Name     string `json:"name" validate:"required,min=3,max=30"`
-	Email    string `json:"email" validate:"required,email,max=50"`
-	Password string `json:"password" validate:"required,min=8,password"`
+	Name     string `json:"name" validate:"required,min=3,max=30" example:"sliitmozillian"`
+	Email    string `json:"email" validate:"required,email,max=50" example:"infosliitmcc@gmail.com"`
+	Password string `json:"password" validate:"required,min=8,password" example:"password"`
 }
 
 // @tags        Users
@@ -44,7 +44,7 @@ type createUserBody struct {
 // @description Create user
 // @accept      json
 // @produce     json
-// @param		request body object{name=string,email=string,password=string} true "Request body"
+// @param		request body createUserBody true "Request body"
 // @success		201 "Created"
 // @failure		400 "Invalid request body"
 // @failure		409 "Username or email already in use"
