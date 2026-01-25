@@ -78,7 +78,7 @@ export default function Profile() {
         )}
       </div>
       <button onClick={linkGithub}>Github</button>
-      <Card className="mx-10 my-5">
+      <Card className="mx-4 sm:mx-6 md:mx-10 my-5">
         <h3 className="text-xl md:text-4xl my-4">Information</h3>
         <div>
           <h5 className="flex gap-2 items-center text-sm sm:text-base md:text-xl my-2 text-primary">
