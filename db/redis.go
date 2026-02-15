@@ -9,6 +9,6 @@ import (
 
 func ConnectRedis() *redis.Client {
 	godotenv.Load()
-	client := redis.NewClient(&redis.Options{Addr: os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT")})
+	client := redis.NewClient(&redis.Options{Addr: os.Getenv("REDIS_URL")})
 	return client
 }
