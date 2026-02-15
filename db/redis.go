@@ -1,6 +1,7 @@
 package db
 
 import (
+	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -9,6 +10,12 @@ import (
 
 func ConnectRedis() *redis.Client {
 	godotenv.Load()
-	client := redis.NewClient(&redis.Options{Addr: os.Getenv("REDIS_URL")})
+	opt, err := redis.ParseURL(os.Getenv("REDIS_URL"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client := redis.NewClient(opt)
+
 	return client
 }
