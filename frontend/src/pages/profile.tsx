@@ -47,7 +47,9 @@ export default function Profile() {
         />
         <Button
           type="button"
-          className="flex items-center gap-2 sm:gap-3 float-right mt-2 sm:mt-3 text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2"
+          disabled
+          title="Coming soon"
+          className="flex items-center gap-2 sm:gap-3 float-right mt-2 sm:mt-3 text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 opacity-60 cursor-not-allowed"
         >
           <Pencil className="size-3 sm:size-4" />
           <span className="hidden xs:inline sm:inline">Edit profile</span>
@@ -85,12 +87,28 @@ export default function Profile() {
             <Users className="size-4 sm:size-5" />
             <span>Connections</span>
           </h5>
-          <Card className="bg-white my-2 sm:my-3 text-xs sm:text-sm md:text-base p-3 sm:p-4">
-            Github: Seniru
-          </Card>
-          <Card className="bg-white my-2 sm:my-3 text-xs sm:text-sm md:text-base p-3 sm:p-4">
-            SLIIT: IT23284852
-          </Card>
+          {user.connections && user.connections.length > 0 ? (
+            user.connections.map((connection) => (
+              <Card
+                key={`${connection.provider}-${connection.providerUserId}`}
+                className="bg-white my-2 sm:my-3 text-xs sm:text-sm md:text-base p-3 sm:p-4"
+              >
+                <span className="font-semibold capitalize">
+                  {connection.provider}
+                </span>
+                {": "}
+                <span>
+                  {connection.providerUserName ||
+                    connection.providerAccountEmail ||
+                    connection.providerUserId}
+                </span>
+              </Card>
+            ))
+          ) : (
+            <Card className="bg-white my-2 sm:my-3 text-xs sm:text-sm md:text-base p-3 sm:p-4 text-gray-500">
+              No connections linked yet
+            </Card>
+          )}
         </div>
       </Card>
     </div>
