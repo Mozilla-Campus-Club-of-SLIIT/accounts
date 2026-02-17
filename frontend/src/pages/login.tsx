@@ -58,7 +58,7 @@ export default function Login() {
           position: "top center",
         });
       }
-    } catch (error) {
+    } catch {
       dispatchAlert({
         type: "error",
         message: "Something unexpected happened",

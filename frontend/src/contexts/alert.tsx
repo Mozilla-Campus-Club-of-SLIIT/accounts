@@ -21,9 +21,7 @@ export type AlertProps = {
 
 export type AlertContextProps = {
   alertData: AlertProps | null;
-  dispatchAlert:
-    | Function
-    | React.Dispatch<React.SetStateAction<AlertProps | null>>;
+  dispatchAlert: React.Dispatch<React.SetStateAction<AlertProps | null>>;
 };
 
 const AlertContext = createContext<AlertContextProps>({
@@ -44,6 +42,7 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAlert = () => {
   return useContext(AlertContext);
 };

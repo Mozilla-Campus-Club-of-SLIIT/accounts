@@ -20,7 +20,7 @@ export const decode = (jwt: string): JwtBody | null => {
     const payload = JSON.parse(atob(parts[1]));
 
     return { header, payload };
-  } catch (e: unknown) {
+  } catch {
     return null;
   }
 };

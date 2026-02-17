@@ -8,7 +8,7 @@ type RoleChipProps = {
   className?: string;
   logoClassName?: string;
   showDeleteIcon?: boolean;
-  onDeleteIconClick?: Function;
+  onDeleteIconClick?: () => void;
 };
 
 export default function RoleChip({

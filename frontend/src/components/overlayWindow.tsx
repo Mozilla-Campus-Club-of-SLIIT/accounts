@@ -6,8 +6,8 @@ export type OverlayWindowProps = {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   children: ReactNode;
-  onOpen?: Function;
-  onClose?: Function;
+  onOpen?: () => void;
+  onClose?: () => void;
   className?: string;
 };
 

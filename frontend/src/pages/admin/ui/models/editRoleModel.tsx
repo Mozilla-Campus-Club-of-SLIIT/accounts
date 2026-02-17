@@ -1,4 +1,4 @@
-import { use, useEffect, useRef, useState, type FormEvent } from "react";
+import { use, useRef, type FormEvent } from "react";
 import Button from "../../../../components/button";
 import OverlayWindow from "../../../../components/overlayWindow";
 import type { User } from "../../../../types/user";
@@ -27,13 +27,8 @@ export default function EditRoleModel({
   setRefreshUsers,
 }: EditRoleModelProps) {
   const roles = use(fetchRoles);
-  const [userRoles, setUserRoles] = useState<string[]>([]);
+  const userRoles = actionUser?.roles ?? [];
   const roleSelectRef = useRef<HTMLSelectElement | null>(null);
-
-  useEffect(() => {
-    if (!actionUser) return setUserRoles([]);
-    setUserRoles(actionUser.roles);
-  }, [actionUser, actionUser?.id, actionUser?.roles]);
 
   const addRole = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

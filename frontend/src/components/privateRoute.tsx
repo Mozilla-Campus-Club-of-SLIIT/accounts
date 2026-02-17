@@ -8,10 +8,10 @@ export default function PrivateRoute({
 }: {
   requiredRoles?: string[];
 }) {
-  let { user } = useAuth();
+  const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
   if (!requiredRoles || requiredRoles?.length === 0) return <Outlet />;
-  for (let role of requiredRoles) {
+  for (const role of requiredRoles) {
     if (user.roles?.includes(role)) return <Outlet />;
   }
 
