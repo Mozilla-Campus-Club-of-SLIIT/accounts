@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Card from "../components/card";
-import { Pencil, Users } from "lucide-react";
+import { Github, Pencil, Users } from "lucide-react";
 
 import api from "../lib/api";
 import logo from "../assets/logo.png";
@@ -24,10 +24,14 @@ export default function Profile() {
   if (user === null) return;
 
   const linkGithub = async () => {
-    const response = await api.post("/api/connections/github/link")
-    const result = await response.json()
-    window.location = result.data
-  }
+    const response = await api.post("/api/connections/github/link");
+    const result = await response.json();
+    window.location.href = result.data;
+  };
+
+  const githubConnection = user.connections?.find(
+    (connection) => connection.provider.toLowerCase() === "github"
+  );
 
   return (
     <div className="grid">
@@ -79,7 +83,6 @@ export default function Profile() {
           </>
         )}
       </div>
-      <button onClick={linkGithub}>Github</button>
       <Card className="mx-4 sm:mx-6 md:mx-10 my-5">
         <h3 className="text-xl md:text-4xl my-4">Information</h3>
         <div>
@@ -88,25 +91,63 @@ export default function Profile() {
             <span>Connections</span>
           </h5>
           {user.connections && user.connections.length > 0 ? (
-            user.connections.map((connection) => (
-              <Card
-                key={`${connection.provider}-${connection.providerUserId}`}
-                className="bg-white my-2 sm:my-3 text-xs sm:text-sm md:text-base p-3 sm:p-4"
-              >
-                <span className="font-semibold capitalize">
-                  {connection.provider}
-                </span>
-                {": "}
-                <span>
-                  {connection.providerUserName ||
-                    connection.providerAccountEmail ||
-                    connection.providerUserId}
-                </span>
-              </Card>
-            ))
+            user.connections.map((connection) => {
+              const isGithub =
+                connection.provider.toLowerCase() === "github" &&
+                !!connection.providerUserName;
+              const displayValue =
+                connection.providerUserName ||
+                connection.providerAccountEmail ||
+                connection.providerUserId;
+
+              return (
+                <Card
+                  key={`${connection.provider}-${connection.providerUserId}`}
+                  className="bg-white my-2 sm:my-3 text-xs sm:text-sm md:text-base p-3 sm:p-4"
+                >
+                  <span className="font-semibold capitalize">
+                    {connection.provider}
+                  </span>
+                  {": "}
+                  {isGithub ? (
+                    <a
+                      href={`https://github.com/${connection.providerUserName}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {displayValue}
+                    </a>
+                  ) : (
+                    <span>{displayValue}</span>
+                  )}
+                </Card>
+              );
+            })
           ) : (
             <Card className="bg-white my-2 sm:my-3 text-xs sm:text-sm md:text-base p-3 sm:p-4 text-gray-500">
               No connections linked yet
+            </Card>
+          )}
+          {!githubConnection && (
+            <Card className="bg-white/60 border border-dashed border-gray-300 my-2 sm:my-3 text-xs sm:text-sm md:text-base p-3 sm:p-4 flex items-center justify-between gap-3">
+              <div>
+                <div className="font-medium flex items-center gap-2">
+                  <Github className="size-4" />
+                  <span>Link your GitHub account</span>
+                </div>
+                <p className="text-gray-500 text-[11px] sm:text-xs mt-1">
+                  Connect your GitHub profile to show it here and use it for
+                  future sign-ins.
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={linkGithub}
+                className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2"
+              >
+                Link GitHub
+              </Button>
             </Card>
           )}
         </div>
