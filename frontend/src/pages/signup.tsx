@@ -5,9 +5,12 @@ import Button from "../components/button";
 import Card from "../components/card";
 import api from "../lib/api";
 import Input from "../components/input";
+import { useAlert } from "../contexts/alert";
 
 export default function Signup() {
   const [searchParams] = useSearchParams();
+  const { dispatchAlert } = useAlert();
+
   const nameRef = useRef<HTMLInputElement>(null);
   const [nameError, setNameError] = useState("");
   const emailRef = useRef<HTMLInputElement>(null);
@@ -38,7 +41,9 @@ export default function Signup() {
     setConfirmationPasswordError("");
 
     if (!nameValid) {
-      setNameError(nameInput?.validationMessage || "");
+      if (nameInput?.validity.tooShort)
+        setNameError("Name must be atleast 3 characters");
+      else setNameError(nameInput?.validationMessage || "");
     }
 
     if (!emailValid) {
@@ -47,18 +52,27 @@ export default function Signup() {
     }
 
     if (!passwordValid) {
-      setPasswordError(passwordInput?.validationMessage || "");
+      if (passwordInput?.validity?.tooShort)
+        setPasswordError("Password must be atleast 8 characters");
+      else if (passwordInput?.validity?.patternMismatch)
+        setPasswordError(
+          "Password must have a number, special character, uppercase and lowercase letter",
+        );
+      else setPasswordError(passwordInput?.validationMessage || "");
     }
 
     if (!confirmationPasswordValid) {
-      setConfirmationPasswordError(
-        confirmationPasswordInput?.validationMessage || ""
-      );
+      if (passwordInput?.validity.tooShort)
+        setConfirmationPasswordError("Password must be atleast 8 characters");
+      else
+        setConfirmationPasswordError(
+          confirmationPasswordInput?.validationMessage || "",
+        );
     }
 
     if (passwordInput?.value !== confirmationPasswordInput?.value)
       return setConfirmationPasswordError(
-        "Confirmation should match your password"
+        "Confirmation should match your password",
       );
 
     if (
@@ -76,10 +90,17 @@ export default function Signup() {
         password: passwordInput?.value.trim(),
       }),
     });
+    const result = await response.json();
     if (response.ok) {
       const redirect = searchParams.get("redirect");
       if (redirect) window.location.href = redirect;
       else window.location.href = "/login";
+    } else {
+      dispatchAlert({
+        message: result?.error?.message ?? response.statusText,
+        type: "error",
+        position: "top center",
+      });
     }
   };
 
@@ -114,6 +135,7 @@ export default function Signup() {
                 id="username"
                 error={nameError}
                 ref={nameRef}
+                minLength={3}
                 required
               />
             </fieldset>
@@ -134,6 +156,8 @@ export default function Signup() {
                 id="password"
                 error={passwordError}
                 ref={passwordRef}
+                minLength={8}
+                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).+$"
                 required
               />
             </fieldset>
@@ -144,6 +168,7 @@ export default function Signup() {
                 id="confirmPassword"
                 error={confirmationPasswordError}
                 ref={confirmationPasswordRef}
+                minLength={8}
                 required
               />
             </fieldset>

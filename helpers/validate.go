@@ -33,7 +33,7 @@ func RegisterPasswordValidation(validate *validator.Validate) {
 		numberPattern := regexp.MustCompile(`\d`)
 		specialCharPattern := regexp.MustCompile(`[^a-zA-Z0-9]`)
 		upperCasePattern := regexp.MustCompile(`[A-Z]`)
-		lowerCasePattern := regexp.MustCompile(`[A-Z]`)
+		lowerCasePattern := regexp.MustCompile(`[a-z]`)
 
 		numbers := numberPattern.FindAllString(pass, -1)
 		specialChars := specialCharPattern.FindAllString(pass, -1)
