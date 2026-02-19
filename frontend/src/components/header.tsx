@@ -39,12 +39,12 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-1000 flex justify-between items-center px-10 py-3 shadow-lg bg-white">
-      <div>
-        <img src={logo} width={110} className="my-3" />
+    <header className="sticky top-0 z-1000 flex justify-between items-center px-4 sm:px-8 lg:px-10 py-3 shadow-lg bg-white">
+      <div className="flex items-center">
+        <img src={logo} width={120} className="h-8 sm:h-10 w-auto" />
       </div>
-      <nav>
-        <div className="hidden md:flex gap-2">
+      <nav className="flex items-center">
+        <div className="hidden md:flex gap-2 items-center">
           <NavigationButtons />
         </div>
         <button
