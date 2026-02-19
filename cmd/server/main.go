@@ -26,6 +26,8 @@ func main() {
 		}
 		http.ServeFile(w, req, path)
 	})
+
+	log.Println("Listening on", "http://"+c.Host+":"+c.Port)
 	err := http.ListenAndServe(c.Host+":"+c.Port, r)
 	if err != nil {
 		log.Println(err.Error())

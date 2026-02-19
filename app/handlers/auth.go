@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,6 +18,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 	"github.com/sliitmozilla/accounts/app/middlewares"
+	"github.com/sliitmozilla/accounts/config"
 	"github.com/sliitmozilla/accounts/db"
 	"github.com/sliitmozilla/accounts/db/models"
 	apiErrors "github.com/sliitmozilla/accounts/errors"
@@ -42,6 +44,8 @@ func GetSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func createAndStoreCode(id string) ([]byte, error) {
+	c := config.GetConfig()
+
 	code := make([]byte, 10)
 	rand.Read(code)
 	redisClient := db.ConnectRedis()
@@ -51,7 +55,7 @@ func createAndStoreCode(id string) ([]byte, error) {
 		context.Background(),
 		"accounts:code:"+base64.URLEncoding.EncodeToString(code),
 		id,
-		time.Duration(time.Minute),
+		time.Duration(c.Lifespan.AuthorizationCode*time.Second),
 	)
 
 	return code, s.Err()
@@ -119,6 +123,7 @@ func Authorize(w http.ResponseWriter, r *http.Request) {
 // @failure     500 "Internal Server error"
 // @router      /token [POST]
 func GetToken(w http.ResponseWriter, r *http.Request) {
+	c := config.GetConfig()
 	code := r.URL.Query().Get("code")
 	redisClient := db.ConnectRedis()
 	res := redisClient.Get(context.Background(), "accounts:code:"+code)
@@ -159,14 +164,14 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 		Value:    refreshToken,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(30 * 24 * time.Hour),
+		Expires:  time.Now().Add(c.Lifespan.RefreshToken + time.Second),
 	})
 	helpers.Response(w, http.StatusOK, map[string]string{"token": accessToken})
 }
 
 type LoginRequestBody struct {
-	Email    string `json:"email" example:"infosliitmcc@gmail.com"`
-	Password string `json:"password" example:"password"`
+	Email    string `json:"email" example:"infosliitmcc@gmail.com" validate:"required,email"`
+	Password string `json:"password" example:"password" validate:"required"`
 }
 
 // @tags        Auth
@@ -176,14 +181,14 @@ type LoginRequestBody struct {
 // @description and refresh token (found in cookie: refreshToken)
 // @accept      json
 // @produce     json
-// @param       request body object true "Request body"
+// @param       request body LoginRequestBody true "Request body"
 // @success 	200 {object} helpers.SuccessResponseModel{data=object{token=string}} "Access token returned in response body; refresh token is set in cookie 'refreshToken'"
-// @failure     400 "Invalid or empty body"
-// @failure     400 "email and password cannot be empty"
+// @failure     400 "Invalid request body"
 // @failure     401 "Invalid credentials"
 // @failure     500 "Internal Server error"
 // @router      /login [POST]
 func Login(w http.ResponseWriter, r *http.Request) {
+	c := config.GetConfig()
 	defer r.Body.Close()
 	var requestBody LoginRequestBody
 
@@ -191,8 +196,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		helpers.Response(w, http.StatusBadRequest, "Invalid or empty body")
 		return
 	}
-	if requestBody.Email == "" || requestBody.Password == "" {
-		helpers.Response(w, http.StatusBadRequest, "email and password cannot be empty")
+
+	errs := helpers.Validate(requestBody)
+	if errs != nil {
+		fmt.Println(errs)
+		helpers.Response(w, http.StatusBadRequest, errs)
 		return
 	}
 
@@ -216,7 +224,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		Value:    refreshToken,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(30 * 24 * time.Hour),
+		Expires:  time.Now().Add(c.Lifespan.RefreshToken * time.Second),
 	})
 	helpers.Response(w, http.StatusOK, map[string]string{"token": accessToken})
 }

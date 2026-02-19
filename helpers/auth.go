@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
+	"github.com/sliitmozilla/accounts/config"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -22,13 +23,14 @@ func ValidatePassword(hashedPassword, password string) bool {
 func GenerateTokens(id, name, email string, roles []string) (accessToken, refreshToken string, err error) {
 	godotenv.Load()
 	jwtSecret := os.Getenv("JWT_SECRET")
+	c := config.GetConfig()
 
 	access := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":    id,
 		"name":  name,
 		"email": email,
 		"roles": roles,
-		"exp":   time.Now().Add(15 * time.Minute).Unix(),
+		"exp":   time.Now().Add(c.Lifespan.AccessToken * time.Second).Unix(),
 		"iat":   time.Now().Unix(),
 	})
 	accessToken, err = access.SignedString([]byte(jwtSecret))
@@ -38,7 +40,7 @@ func GenerateTokens(id, name, email string, roles []string) (accessToken, refres
 
 	refresh := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":  id,
-		"exp": time.Now().Add(30 * 24 * time.Hour).Unix(),
+		"exp": time.Now().Add(c.Lifespan.RefreshToken * time.Second).Unix(),
 		"iat": time.Now().Unix(),
 	})
 	refreshToken, err = refresh.SignedString([]byte(jwtSecret))

@@ -1,4 +1,4 @@
-.PHONY: run build clean docs
+.PHONY: run build clean docs install
 
 run:
 	go run cmd/server/main.go
@@ -14,6 +14,7 @@ build: clean docs
 	fi
 	cp -r frontend/dist/* build
 	cp -r docs build
+	cp -r config build
 
 clean:
 	cd frontend && rm -rf dist
@@ -26,3 +27,6 @@ docs:
 		echo swag is not installed. Please install it and continue; \
 	fi
  
+
+install:
+	cd frontend && npm i

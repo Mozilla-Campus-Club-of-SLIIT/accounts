@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import Card from "../components/card";
-import { Pencil, Users } from "lucide-react";
+import { Github, Pencil, Users } from "lucide-react";
 
 import api from "../lib/api";
-import miniLogo from "../assets/logo-small-white.png";
+import logo from "../assets/logo.png";
 import type { User } from "../types/user";
+import Button from "../components/button";
+import RoleChip from "../components/roleChip";
+import ProfileImage from "../components/profileImage";
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
@@ -20,54 +23,129 @@ export default function Profile() {
 
   if (user === null) return;
 
+  const linkGithub = async () => {
+    const response = await api.post("/api/connections/github/link");
+    const result = await response.json();
+    window.location.href = result.data;
+  };
+
+  const githubConnection = user.connections?.find(
+    (connection) => connection.provider.toLowerCase() === "github"
+  );
+
   return (
     <div className="grid">
-      <Card className="relative mx-auto mt-20 md:mt-30 w-11/12 md:w-3/5 px-10 rounded-3xl">
-        <div className="grid bg-primary w-20 h-20 md:w-35 md:h-35 rounded-full justify-center content-center text-white text-3xl md:text-6xl absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
-          {user.name
-            .split(" ")
-            .splice(0, 2)
-            .map((n) => n.toUpperCase()[0])
-            .join("")}
+      {/* Banner section */}
+      <div className="bg-[#F47624]/15 p-4 px-4 pt-12 sm:p-5 sm:px-10 sm:pt-20 overflow-hidden">
+        <img
+          src={logo}
+          className="float-right opacity-20 w-48 sm:w-72 md:w-96"
+        />
+      </div>
+
+      {/* Profile header with avatar and edit button */}
+      <div className="relative mx-4 sm:mx-6 md:mx-10">
+        <ProfileImage
+          name={user.name}
+          className="absolute top-0 -translate-y-1/2 w-24 h-24 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-38 lg:h-38 text-3xl sm:text-3xl md:text-5xl lg:text-6xl"
+        />
+        <Button
+          type="button"
+          disabled
+          title="Coming soon"
+          className="flex items-center gap-2 sm:gap-3 float-right mt-2 sm:mt-3 text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 opacity-60 cursor-not-allowed"
+        >
+          <Pencil className="size-3 sm:size-4" />
+          <span className="hidden xs:inline sm:inline">Edit profile</span>
+          <span className="xs:hidden sm:hidden">Edit</span>
+        </Button>
+      </div>
+
+      {/* User info section */}
+      <div className="mx-4 sm:mx-6 md:mx-10 mt-8 sm:mt-10 md:mt-14">
+        <h2 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-semibold">
+          {user.name}
+        </h2>
+        <div className="text-xs sm:text-sm md:text-lg lg:text-xl font-extralight text-gray-600">
+          {user.email}
         </div>
-        <div className="grid justify-center pt-8 md:pt-20 text-center">
-          <div className="flex gap-3 items-center justify-center">
-            <h2 className="text-2xl md:text-5xl">{user.name}</h2>
-            <Pencil className="text-primary size-5 md:size-6" />
-          </div>
-          <div className="text-xs md:text-xl underline md:my-2">
-            {user.email}
-          </div>
-          <div className="grid justify-items-center my-2">
-            {user.roles.length > 0 && (
-              <div className="flex items-center gap-2 bg-primary text-white text-[10px] md:text-base px-3 py-1 md:px-4 md:py-2 my-1 rounded-full">
-                <img src={miniLogo} className="w-4 md:w-6" />
-                <span>{user.roles[0]}</span>
-              </div>
-            )}
-            <div>
+        {user.roles.length > 0 && (
+          <>
+            <h5 className="text-base sm:text-lg md:text-xl my-2 sm:my-3 font-medium">
+              Roles
+            </h5>
+            <div className="flex flex-wrap gap-2">
+              <RoleChip highlightedRole={true} name={user.roles[0]} />
               {user.roles.slice(1).map((role) => (
-                <div className="px-3 py-1 md:px-4 md:py-2 m-1 rounded-full border border-primary inline-block text-[10px] md:text-base">
-                  {role}
-                </div>
+                <RoleChip key={role} name={role} />
               ))}
             </div>
-          </div>
-        </div>
-      </Card>
-      <Card className="bg-linear-to-b from-black to-stone-800 text-white w-11/12 md:w-3/5 mx-auto my-5 p-8 rounded-3xl">
-        <h3 className="text-xl md:text-4xl my-3">Information</h3>
+          </>
+        )}
+      </div>
+      <Card className="mx-4 sm:mx-6 md:mx-10 my-5">
+        <h3 className="text-xl md:text-4xl my-4">Information</h3>
         <div>
-          <h5 className="flex gap-2 text-sm md:text-xl my-2 text-primary">
-            <Users />
+          <h5 className="flex gap-2 items-center text-sm sm:text-base md:text-xl my-2 text-primary">
+            <Users className="size-4 sm:size-5" />
             <span>Connections</span>
           </h5>
-          <Card className="bg-white/15 my-3 text-sm md:text-base">
-            Github: Seniru
-          </Card>
-          <Card className="bg-white/15 my-3 text-sm md:text-base">
-            SLIIT: IT23284852
-          </Card>
+          {(user.connections && user.connections.length > 0) && (
+            user.connections.map((connection) => {
+              const isGithub =
+                connection.provider.toLowerCase() === "github" &&
+                !!connection.providerUserName;
+              const displayValue =
+                connection.providerUserName ||
+                connection.providerAccountEmail ||
+                connection.providerUserId;
+
+              return (
+                <Card
+                  key={`${connection.provider}-${connection.providerUserId}`}
+                  className="bg-white my-2 sm:my-3 text-xs sm:text-sm md:text-base p-3 sm:p-4"
+                >
+                  <span className="font-semibold capitalize">
+                    {connection.provider}
+                  </span>
+                  {": "}
+                  {isGithub ? (
+                    <a
+                      href={`https://github.com/${connection.providerUserName}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {displayValue}
+                    </a>
+                  ) : (
+                    <span>{displayValue}</span>
+                  )}
+                </Card>
+              );
+            })
+          )}
+          {!githubConnection && (
+            <Card className="bg-white/60 border border-dashed border-gray-300 my-2 sm:my-3 text-xs sm:text-sm md:text-base p-3 sm:p-4 flex items-center justify-between gap-3">
+              <div>
+                <div className="font-medium flex items-center gap-2">
+                  <Github className="size-4" />
+                  <span>Link your GitHub account</span>
+                </div>
+                <p className="text-gray-500 text-[11px] sm:text-xs mt-1">
+                  Connect your GitHub profile to show it here and use it for
+                  future sign-ins.
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={linkGithub}
+                className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2"
+              >
+                Link GitHub
+              </Button>
+            </Card>
+          )}
         </div>
       </Card>
     </div>

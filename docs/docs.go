@@ -59,6 +59,121 @@ const docTemplate = `{
                 }
             }
         },
+        "/connections/github/": {
+            "delete": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
+                "description": "Unlink Github account from a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Connections"
+                ],
+                "summary": "Unlink Github account from a user",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "404": {
+                        "description": "User or provider not found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/connections/github/callback": {
+            "post": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
+                "description": "Handles the OAuth authorization callback sent from Github\nThis endpoint is not meant to be invoked directly, but from Github once authorized from their platform\nSee more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Connections"
+                ],
+                "summary": "Handles the OAuth authorization callback sent from Github",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "([Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps))",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set by Github OAuth. ([Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps))",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to profile after successful linking"
+                    },
+                    "404": {
+                        "description": "User or provider invalid (not found)"
+                    },
+                    "409": {
+                        "description": "Already linked"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/connections/github/link": {
+            "post": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
+                "description": "Initiates the request to link an account with Github\nIf the user is logged in, redirect to Github OAuth authorization endpoint to initiate the Github browser authorization flow\nSee more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Connections"
+                ],
+                "summary": "Initiates the request to link an account with Github",
+                "responses": {
+                    "302": {
+                        "description": "Redirect to Github OAuth authorization endpoint"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/login": {
             "post": {
                 "description": "Endpoint to log in a user with email and password\nUpon successful login user receives a pair of access token (found in response body) and refresh token (found in cookie: refreshToken)",
@@ -79,7 +194,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.LoginRequestBody"
                         }
                     }
                 ],
@@ -108,7 +223,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "email and password cannot be empty"
+                        "description": "Invalid request body"
                     },
                     "401": {
                         "description": "Invalid credentials"
@@ -229,7 +344,7 @@ const docTemplate = `{
                         "description": "Created"
                     },
                     "400": {
-                        "description": "name cannot be empty"
+                        "description": "Invalid request body"
                     },
                     "401": {
                         "description": "Not logged in or invalid token"
@@ -568,18 +683,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "email": {
-                                    "type": "string"
-                                },
-                                "password": {
-                                    "type": "string"
-                                },
-                                "username": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/handlers.createUserBody"
                         }
                     }
                 ],
@@ -588,7 +692,7 @@ const docTemplate = `{
                         "description": "Created"
                     },
                     "400": {
-                        "description": "name, email or password can't be empty"
+                        "description": "Invalid request body"
                     },
                     "409": {
                         "description": "Username or email already in use"
@@ -765,6 +869,53 @@ const docTemplate = `{
                     }
                 }
             },
+            "delete": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
+                "description": "Delete a user. Admin only route",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Invalid user id"
+                    },
+                    "401": {
+                        "description": "Not logged in or invalid token"
+                    },
+                    "403": {
+                        "description": "Cannot delete yourself"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
             "patch": {
                 "security": [
                     {
@@ -914,6 +1065,49 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.LoginRequestBody": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "infosliitmcc@gmail.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "password"
+                }
+            }
+        },
+        "handlers.createUserBody": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "infosliitmcc@gmail.com"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3,
+                    "example": "sliitmozillian"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "password"
+                }
+            }
+        },
         "helpers.SuccessResponseModel": {
             "type": "object",
             "properties": {
@@ -924,16 +1118,24 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "linkedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2025-12-31T00:00:00Z"
                 },
                 "provider": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "github"
                 },
                 "providerAccountEmail": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "infosliitmcc@gmail.com"
                 },
                 "providerUserId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1"
+                },
+                "providerUserName": {
+                    "type": "string",
+                    "example": "sliitmozillian"
                 }
             }
         },

@@ -2,6 +2,38 @@ basePath: /api
 consumes:
 - application/json
 definitions:
+  handlers.LoginRequestBody:
+    properties:
+      email:
+        example: infosliitmcc@gmail.com
+        type: string
+      password:
+        example: password
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.createUserBody:
+    properties:
+      email:
+        example: infosliitmcc@gmail.com
+        maxLength: 50
+        type: string
+      name:
+        example: sliitmozillian
+        maxLength: 30
+        minLength: 3
+        type: string
+      password:
+        example: password
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
   helpers.SuccessResponseModel:
     properties:
       data: {}
@@ -9,12 +41,19 @@ definitions:
   models.ConnectionModel:
     properties:
       linkedAt:
+        example: "2025-12-31T00:00:00Z"
         type: string
       provider:
+        example: github
         type: string
       providerAccountEmail:
+        example: infosliitmcc@gmail.com
         type: string
       providerUserId:
+        example: "1"
+        type: string
+      providerUserName:
+        example: sliitmozillian
         type: string
     type: object
   models.RoleModel:
@@ -100,6 +139,84 @@ paths:
       summary: Initiate the authentication flow
       tags:
       - Auth
+  /connections/github/:
+    delete:
+      consumes:
+      - application/json
+      description: Unlink Github account from a user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Not logged in or invalid token
+        "404":
+          description: User or provider not found
+        "500":
+          description: Internal Server Error
+      security:
+      - AccessToken: []
+      summary: Unlink Github account from a user
+      tags:
+      - Connections
+  /connections/github/callback:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Handles the OAuth authorization callback sent from Github
+        This endpoint is not meant to be invoked directly, but from Github once authorized from their platform
+        See more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+      parameters:
+      - description: ([Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps))
+        in: query
+        name: state
+        required: true
+        type: string
+      - description: Set by Github OAuth. ([Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps))
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to profile after successful linking
+        "404":
+          description: User or provider invalid (not found)
+        "409":
+          description: Already linked
+        "500":
+          description: Internal Server Error
+      security:
+      - AccessToken: []
+      summary: Handles the OAuth authorization callback sent from Github
+      tags:
+      - Connections
+  /connections/github/link:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Initiates the request to link an account with Github
+        If the user is logged in, redirect to Github OAuth authorization endpoint to initiate the Github browser authorization flow
+        See more: [Github OAuth documentation](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to Github OAuth authorization endpoint
+        "401":
+          description: Not logged in or invalid token
+        "500":
+          description: Internal Server Error
+      security:
+      - AccessToken: []
+      summary: Initiates the request to link an account with Github
+      tags:
+      - Connections
   /login:
     post:
       consumes:
@@ -113,7 +230,7 @@ paths:
         name: request
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.LoginRequestBody'
       produces:
       - application/json
       responses:
@@ -131,7 +248,7 @@ paths:
                   type: object
               type: object
         "400":
-          description: email and password cannot be empty
+          description: Invalid request body
         "401":
           description: Invalid credentials
         "500":
@@ -203,7 +320,7 @@ paths:
         "201":
           description: Created
         "400":
-          description: name cannot be empty
+          description: Invalid request body
         "401":
           description: Not logged in or invalid token
         "403":
@@ -415,21 +532,14 @@ paths:
         name: request
         required: true
         schema:
-          properties:
-            email:
-              type: string
-            password:
-              type: string
-            username:
-              type: string
-          type: object
+          $ref: '#/definitions/handlers.createUserBody'
       produces:
       - application/json
       responses:
         "201":
           description: Created
         "400":
-          description: name, email or password can't be empty
+          description: Invalid request body
         "409":
           description: Username or email already in use
         "500":
@@ -438,6 +548,36 @@ paths:
       tags:
       - Users
   /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user. Admin only route
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Invalid user id
+        "401":
+          description: Not logged in or invalid token
+        "403":
+          description: Cannot delete yourself
+        "404":
+          description: User not found
+        "500":
+          description: Internal Server Error
+      security:
+      - AccessToken: []
+      summary: Delete a user
+      tags:
+      - Users
     get:
       consumes:
       - application/json

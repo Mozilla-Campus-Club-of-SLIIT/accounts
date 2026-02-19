@@ -29,7 +29,8 @@ func (b UsersRoute) Routes() chi.Router {
 
 	r.Route("/{id}", func(usersRoute chi.Router) {
 		usersRoute.Get("/", usersHandler.GetUser)
-		usersRoute.Patch("/", usersHandler.UpdateUser)
+		usersRoute.With(middlewares.RequireRoles(("admin"))).Patch("/", usersHandler.UpdateUser)
+		usersRoute.With(middlewares.RequireRoles(("admin"))).Delete("/", usersHandler.DeleteUser)
 		usersRoute.Route("/roles", func(usersRolesRoute chi.Router) {
 			usersRolesRoute.Use(middlewares.RequireLogin)
 			usersRolesRoute.Use(middlewares.RequireRoles("admin"))

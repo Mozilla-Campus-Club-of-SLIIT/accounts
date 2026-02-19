@@ -8,21 +8,28 @@ import logoMini from "../assets/logo-small-white.png";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import api from "../lib/api";
+import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/auth";
 
 function NavigationButtons() {
+  const { user } = useAuth();
 
   const logout = async () => {
-    await api.post("/api/logout")
-    localStorage.removeItem("token")
-    window.location.href = "/"
-  }
+    await api.post("/api/logout");
+    localStorage.removeItem("token");
+    window.location.href = "/";
+  };
 
   return (
     <>
-      <Button className="bg-primary flex items-center gap-1">
-        <img src={logoMini} width={24} />
-        <span>Admin dashboard</span>
-      </Button>
+      {user?.roles?.includes("admin") && (
+        <Link to="/admin/dashboard">
+          <Button className="bg-primary flex items-center gap-1">
+            <img src={logoMini} width={24} />
+            <span>Admin dashboard</span>
+          </Button>
+        </Link>
+      )}
       <Button onClick={logout}>Logout</Button>
     </>
   );
@@ -32,12 +39,12 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-1000 flex justify-between items-center px-5 py-3 shadow-lg bg-white">
-      <div>
-        <img src={logo} width={110} className="my-3" />
-      </div>
-      <nav>
-        <div className="hidden md:flex gap-2">
+    <header className="sticky top-0 z-1000 flex justify-between items-center px-4 sm:px-8 lg:px-10 py-3 shadow-lg bg-white">
+      <Link to="" className="flex items-center">
+        <img src={logo} width={120} className="h-8 sm:h-10 w-auto" />
+      </Link>
+      <nav className="flex items-center">
+        <div className="hidden md:flex gap-2 items-center">
           <NavigationButtons />
         </div>
         <button

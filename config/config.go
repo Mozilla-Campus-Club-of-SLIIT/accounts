@@ -3,29 +3,34 @@
 package config
 
 import (
+	_ "embed"
 	"encoding/json"
 	"log"
-	"os"
+	"time"
 )
 
-// Config : struct
+type Lifespan struct {
+	AccessToken       time.Duration `json:"accessToken"`
+	RefreshToken      time.Duration `json:"refreshToken"`
+	AuthorizationCode time.Duration `json:"authorizationCode"`
+}
+
 type Config struct {
-	Environment string `json:"env"`
-	Host        string `json:"host"`
-	Port        string `json:"port"`
+	Environment string   `json:"env"`
+	Host        string   `json:"host"`
+	Port        string   `json:"port"`
+	Lifespan    Lifespan `json:"lifespan"`
 }
 
 var config *Config
 
+//go:embed config.json
+var configData []byte
+
 func init() {
-	file, err := os.Open("config/config.json")
-	if err != nil {
-		log.Fatal("[x] error : ", err.Error())
-	}
-	decoder := json.NewDecoder(file)
+
 	conf := Config{}
-	err = decoder.Decode(&conf)
-	if err != nil {
+	if err := json.Unmarshal(configData, &conf); err != nil {
 		log.Fatal("[x] error : ", err.Error())
 	}
 	config = &conf

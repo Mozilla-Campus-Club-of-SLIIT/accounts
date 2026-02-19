@@ -26,10 +26,17 @@ import (
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := models.UserModel{}.SelectAll()
 	if err != nil {
-		helpers.Response(w, http.StatusInternalServerError, err.Error())
+		log.Println(err.Error())
+		helpers.Response(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 	helpers.Response(w, http.StatusOK, users)
+}
+
+type createUserBody struct {
+	Name     string `json:"name" validate:"required,min=3,max=30" example:"sliitmozillian"`
+	Email    string `json:"email" validate:"required,email,max=50" example:"infosliitmcc@gmail.com"`
+	Password string `json:"password" validate:"required,min=8,password" example:"password"`
 }
 
 // @tags        Users
@@ -37,20 +44,29 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 // @description Create user
 // @accept      json
 // @produce     json
-// @param		request body object{username=string,email=string,password=string} true "Request body"
+// @param		request body createUserBody true "Request body"
 // @success		201 "Created"
-// @failure		400 "Invalid or empty body"
-// @failure 	400 "name, email or password can't be empty"
+// @failure		400 "Invalid request body"
 // @failure		409 "Username or email already in use"
 // @failure     500 "Internal Server Error"
 // @router      /users [POST]
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	var u models.UserModel
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+	var body createUserBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		helpers.Response(w, http.StatusBadRequest, "Invalid or empty body")
 		return
 	}
+
+	errs := helpers.Validate(body)
+	if errs != nil {
+		helpers.Response(w, http.StatusBadRequest, errs)
+		return
+	}
+
+	u = models.UserModel{Name: body.Name, Email: body.Email, Password: body.Password}
+
 	if _, err := u.Insert(); err != nil {
 		if ve, ok := err.(errors.ValidationError); ok {
 			helpers.Response(w, http.StatusBadRequest, ve.Error())
@@ -174,6 +190,10 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 // @router      /users/{id} [PATCH]
 func UpdateUser(w http.ResponseWriter, r *http.Request) {}
 
+type AddRoleBody struct {
+	Name string `json:"name" validate:"required"`
+}
+
 // @tags        Users
 // @summary		Add a role to the user
 // @description Add a role to the user
@@ -196,18 +216,20 @@ func AddRole(w http.ResponseWriter, r *http.Request) {
 	requestedUserId := r.PathValue("id")
 	requestedUserUuid := uuid.FromStringOrNil(requestedUserId)
 	role := models.RoleModel{}
+	requestBody := AddRoleBody{}
 	if requestedUserUuid == uuid.Nil {
 		helpers.Response(w, http.StatusBadRequest, "Invalid user id")
 		return
 	}
-	if err := json.NewDecoder(r.Body).Decode(&role); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		helpers.Response(w, http.StatusBadRequest, "Invalid or empty body")
 		return
 	}
-	if role.Name == "" {
-		helpers.Response(w, http.StatusBadRequest, "role cannot be empty")
+	if errs := helpers.Validate(requestBody); errs != nil {
+		helpers.Response(w, http.StatusBadRequest, requestBody)
 		return
 	}
+	role = models.RoleModel{Name: requestBody.Name}
 	u := models.UserModel{ID: requestedUserUuid}
 	_, err := u.InsertRole(role.Name)
 	if err != nil {
@@ -258,6 +280,49 @@ func RemoveRole(w http.ResponseWriter, r *http.Request) {
 	rows, err := u.RemoveRole(role)
 	if rows == 0 {
 		helpers.Response(w, http.StatusNotFound, "User or role not found")
+		return
+	}
+	if err != nil {
+		helpers.Response(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+	helpers.Response(w, http.StatusOK, http.StatusText(http.StatusOK))
+}
+
+// @tags        Users
+// @summary		Delete a user
+// @description Delete a user. Admin only route
+// @security	AccessToken
+// @accept      json
+// @produce     json
+// @param		id path string true "User ID"
+// @success		200 "OK"
+// @failure		400 "Invalid user id"
+// @failure		401 "Not logged in or invalid token"
+// @failure		403 "Forbidden (admin only route)"
+// @failure		403 "Cannot delete yourself"
+// @failure 	404 "User not found"
+// @failure     500 "Internal Server Error"
+// @router      /users/{id} [DELETE]
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	requestedUserId := r.PathValue("id")
+	requestedUserUuid := uuid.FromStringOrNil(requestedUserId)
+	ctxUser := r.Context().Value(middlewares.UserContext{}).(*models.UserModel)
+
+	if requestedUserUuid == uuid.Nil {
+		helpers.Response(w, http.StatusBadRequest, "Invalid user id")
+		return
+	}
+
+	if requestedUserId == ctxUser.ID.String() {
+		helpers.Response(w, http.StatusForbidden, "Cannot delete yourself")
+		return
+	}
+
+	u := models.UserModel{ID: requestedUserUuid}
+	rows, err := u.Delete()
+	if rows == 0 {
+		helpers.Response(w, http.StatusNotFound, "User not found")
 		return
 	}
 	if err != nil {

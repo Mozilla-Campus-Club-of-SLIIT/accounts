@@ -24,6 +24,7 @@ func SetupRoutes() *chi.Mux {
 	r.Mount("/", AuthRoutes{}.Routes())
 	r.Mount("/users", UsersRoute{}.Routes())
 	r.Mount("/roles", RolesRoutes{}.Routes())
+	r.Mount("/connections", ConnectionsRoute{}.Routes())
 
 	// Swagger docs
 	fs := http.FileServer(http.Dir(filepath.Join(dir, "docs")))

@@ -30,6 +30,10 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 	helpers.Response(w, http.StatusOK, roles)
 }
 
+type CreateRoleBody struct {
+	Name string `json:"name" validate:"required,min=2,max=20"`
+}
+
 // @tags        Roles
 // @summary		Create a new role
 // @description Create a new role. Protected route
@@ -38,8 +42,7 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 // @produce     json
 // @param       request body models.RoleModel true "Request body"
 // @success		201 "Created"
-// @failure		400 "Invalid or empty body"
-// @failure		400 "name cannot be empty"
+// @failure		400 "Invalid request body"
 // @failure		401 "Not logged in or invalid token"
 // @failure		403 "Attempting to create admin role"
 // @failure		403 "Forbidden (admin only route)"
@@ -48,7 +51,8 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 // @router      /roles [POST]
 func CreateRole(w http.ResponseWriter, r *http.Request) {
 	var role models.RoleModel
-	if err := json.NewDecoder(r.Body).Decode(&role); err != nil {
+	var createRoleBody CreateRoleBody
+	if err := json.NewDecoder(r.Body).Decode(&createRoleBody); err != nil {
 		helpers.Response(w, http.StatusBadRequest, "Invalid or empty body")
 		return
 	}
@@ -56,10 +60,12 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 		helpers.Response(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
 		return
 	}
-	if role.Name == "" {
-		helpers.Response(w, http.StatusBadRequest, "name cannot be empty")
+	if errs := helpers.Validate(createRoleBody); errs != nil {
+		helpers.Response(w, http.StatusBadRequest, errs)
 		return
 	}
+
+	role = models.RoleModel{Name: createRoleBody.Name}
 	if _, err := role.Insert(); err != nil {
 		if ve, ok := err.(errors.DuplicateError); ok {
 			helpers.Response(w, http.StatusConflict, ve.Error())
@@ -73,6 +79,10 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 	helpers.Response(w, http.StatusCreated, http.StatusText(http.StatusCreated))
 }
 
+type UpdateRoleBody struct {
+	Name string `json:"name" validate:"required,min=2,max=20"`
+}
+
 // @tags        Roles
 // @summary		Update a role
 // @description Update a role. Protected route
@@ -81,7 +91,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 // @produce     json
 // @param		role path string true "Role name"
 // @success		200 "OK"
-// @failure		400 "Invalid or empty body"
+// @failure		400 "Invalid request body"
 // @failure 	400 "Name cannot be empty"
 // @failure		401 "Not logged in or invalid token"
 // @failure		403 "Forbidden (admin only route)"
@@ -92,7 +102,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 func UpdateRole(w http.ResponseWriter, r *http.Request) {
 	role := r.PathValue("role")
 	originalRole := models.RoleModel{Name: role}
-	var newRole models.RoleModel
+	var newRole UpdateRoleBody
 
 	if role == "admin" {
 		helpers.Response(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
@@ -107,12 +117,12 @@ func UpdateRole(w http.ResponseWriter, r *http.Request) {
 		helpers.Response(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
 		return
 	}
-	if newRole.Name == "" {
-		helpers.Response(w, http.StatusBadRequest, "name cannot be empty")
+	if errs := helpers.Validate(newRole); errs != nil {
+		helpers.Response(w, http.StatusBadRequest, errs)
 		return
 	}
 
-	rows, err := originalRole.Update(newRole)
+	rows, err := originalRole.Update(models.RoleModel{Name: newRole.Name})
 	if err != nil {
 		log.Println(err.Error())
 		helpers.Response(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))

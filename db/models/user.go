@@ -2,7 +2,9 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -22,7 +24,7 @@ type UserModel struct {
 	Private     bool              `json:"private"`
 	CreatedAt   *time.Time        `json:"createdAt" example:"2025-12-31T00:00:00Z"`
 	UpdatedAt   *time.Time        `json:"updatedAt" example:"2025-12-31T00:00:00Z"`
-	Roles       []string          `json:"roles" db:"-" example:"admin"`
+	Roles       []string          `json:"roles" example:"admin"`
 	Connections []ConnectionModel `json:"connections" db:"-"`
 }
 
@@ -32,6 +34,9 @@ func (UserModel) Login(email string, password string) (accessToken, refreshToken
 		return "", "", err
 	}
 	defer conn.Close(context.Background())
+
+	email = strings.TrimSpace(email)
+	password = strings.TrimSpace(password)
 
 	rows, err := conn.Query(context.Background(),
 		`SELECT u.id, u.name, u.password, array_agg(ur.rolename) AS roles
@@ -76,7 +81,10 @@ func (UserModel) SelectAll() ([]UserModel, error) {
 	defer conn.Close(context.Background())
 
 	rows, err := conn.Query(context.Background(),
-		"SELECT id, name, email, createdAt, updatedAt, private FROM users",
+		`SELECT u.id, u.name, u.email, u.createdAt, u.updatedAt, u.private, array_remove(array_agg(ur.rolename), NULL) AS roles
+		FROM users u
+		LEFT JOIN userroles ur ON u.id = ur.userid
+		GROUP BY u.id`,
 	)
 	if err != nil {
 		return nil, err
@@ -94,11 +102,28 @@ func (UserModel) GetUserByID(id uuid.UUID) (u UserModel, err error) {
 	defer conn.Close(context.Background())
 
 	rows, err := conn.Query(context.Background(),
-		`SELECT u.id, u.name, u.email, u.createdAt, u.updatedAt, u.private, array_agg(ur.rolename) AS roles
+		`SELECT
+    	u.id,
+    	u.name,
+    	u.email,
+    	u.createdat,
+    	u.updatedat,
+    	u.private,
+    	array_agg(DISTINCT ur.rolename) AS roles,
+    	(SELECT json_agg(json_build_object(
+            'provider', uc.provider,
+            'providerUserId', uc.provideruserid,
+            'providerUserName', uc.providerusername,
+            'providerAccountEmail', uc.provideraccountemail,
+            'linkedAt', to_char(uc.linkedat, 'YYYY-MM-DD"T"HH24:MI:SSZ')
+        ))
+		FROM userconnections uc
+      	WHERE uc.userid = u.id
+    	) AS connections
 		FROM users u
 		LEFT JOIN userroles ur ON u.id = ur.userid
-		WHERE id = $1
-		GROUP BY u.id`,
+		WHERE u.id = $1
+		GROUP BY u.id;`,
 		id.String(),
 	)
 	if err != nil {
@@ -111,7 +136,9 @@ func (UserModel) GetUserByID(id uuid.UUID) (u UserModel, err error) {
 
 	u = UserModel{}
 	var roles pgtype.Array[pgtype.Text]
-	rows.Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt, &u.UpdatedAt, &u.Private, &roles)
+	var connectionsJSON []byte
+
+	rows.Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt, &u.UpdatedAt, &u.Private, &roles, &connectionsJSON)
 	// assign roles
 	u.Roles = []string{}
 	for _, role := range roles.Elements {
@@ -119,6 +146,8 @@ func (UserModel) GetUserByID(id uuid.UUID) (u UserModel, err error) {
 			u.Roles = append(u.Roles, role.String)
 		}
 	}
+	// assign connections
+	json.Unmarshal(connectionsJSON, &u.Connections)
 
 	return
 }
@@ -130,9 +159,9 @@ func (u *UserModel) Insert() (int, error) {
 	}
 	defer conn.Close(context.Background())
 
-	if u.Name == "" || u.Email == "" || u.Password == "" {
-		return 0, apiErrors.ValidationError{Msg: "name, email or password can't be empty"}
-	}
+	u.Name = strings.TrimSpace(u.Name)
+	u.Email = strings.TrimSpace(u.Email)
+	u.Password = strings.TrimSpace(u.Password)
 
 	hashedPass := helpers.HashPassword(u.Password)
 	t, err := conn.Exec(
@@ -191,5 +220,16 @@ func (u *UserModel) RemoveRole(role string) (int, error) {
 		"DELETE FROM userroles WHERE userid=$1 AND rolename=$2",
 		u.ID.String(), role,
 	)
+	return int(t.RowsAffected()), err
+}
+
+func (u *UserModel) Delete() (int, error) {
+	conn, err := db.ConnectDB()
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Close(context.Background())
+
+	t, err := conn.Exec(context.Background(), "DELETE FROM users WHERE id=$1", u.ID.String())
 	return int(t.RowsAffected()), err
 }
