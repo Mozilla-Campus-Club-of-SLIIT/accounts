@@ -13,14 +13,13 @@ func (b UsersRoute) Routes() chi.Router {
 
 	r := chi.NewRouter()
 
-	r.Use(middlewares.AuthHandler)
-
 	r.Route("/", func(usersRoutes chi.Router) {
-		usersRoutes.With(middlewares.RequireRoles("admin")).Get("/", usersHandler.GetUsers)
+		usersRoutes.With(middlewares.AuthHandler).With(middlewares.RequireRoles("admin")).Get("/", usersHandler.GetUsers)
 		usersRoutes.Post("/", usersHandler.CreateUser)
 	})
 
 	r.Route("/me", func(usersRoute chi.Router) {
+		usersRoute.Use(middlewares.AuthHandler)
 		usersRoute.Use(middlewares.RequireLogin)
 		usersRoute.Get("/", usersHandler.GetMe)
 		usersRoute.Patch("/", usersHandler.UpdateMe)
@@ -28,6 +27,7 @@ func (b UsersRoute) Routes() chi.Router {
 	})
 
 	r.Route("/{id}", func(usersRoute chi.Router) {
+		usersRoute.Use(middlewares.AuthHandler)
 		usersRoute.Get("/", usersHandler.GetUser)
 		usersRoute.With(middlewares.RequireRoles(("admin"))).Patch("/", usersHandler.UpdateUser)
 		usersRoute.With(middlewares.RequireRoles(("admin"))).Delete("/", usersHandler.DeleteUser)
