@@ -229,7 +229,6 @@ func IsOffensive(phrase string) bool {
 	}
 	for range 2 {
 		phrase = replaceSimilarCharacters(phrase)
-		println(phrase)
 		if offensiveRegex.MatchString(phrase) {
 			return true
 		}
