@@ -34,7 +34,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 type createUserBody struct {
-	Name     string `json:"name" validate:"required,min=3,max=30" example:"sliitmozillian"`
+	Name     string `json:"name" validate:"required,min=3,max=30,nooffensive" example:"sliitmozillian"`
 	Email    string `json:"email" validate:"required,email,max=50" example:"infosliitmcc@gmail.com"`
 	Password string `json:"password" validate:"required,min=8,password" example:"password"`
 }
