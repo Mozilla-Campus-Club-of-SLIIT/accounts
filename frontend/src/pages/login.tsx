@@ -38,7 +38,7 @@ export default function Login() {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email: emailInput?.value.trim(),
@@ -52,9 +52,14 @@ export default function Login() {
         if (redirect) window.location.href = redirect;
         else window.location.href = "/";
       } else {
+        const errorMessage =
+          result?.error?.message || "Something unexpected happened";
+        const displayMessage = Array.isArray(errorMessage)
+          ? errorMessage[0]?.reason
+          : errorMessage;
         dispatchAlert({
           type: "error",
-          message: result?.error?.message || "Something unexpected happened",
+          message: displayMessage,
           position: "top center",
         });
       }

@@ -12,17 +12,19 @@ import (
 
 var validate *validator.Validate
 var reasonMessages map[string]string = map[string]string{
-	"required": "%s is required",
-	"email":    "%s should be a valid email",
-	"min":      "%s should be atleast %s",
-	"max":      "%s must be at most %s",
-	"password": "%s must have a number, special character, uppercase and lowercase letter",
+	"required":    "%s is required",
+	"email":       "%s should be a valid email",
+	"min":         "%s should be atleast %s",
+	"max":         "%s must be at most %s",
+	"password":    "%s must have a number, special character, uppercase and lowercase letter",
+	"nooffensive": "%s contains offensive words",
 }
 
 func GetValidator() *validator.Validate {
 	if validate == nil {
 		validate = validator.New(validator.WithRequiredStructEnabled())
 		RegisterPasswordValidation(validate)
+		RegisterOffensiveLanguageValidation(validate)
 	}
 	return validate
 }
@@ -41,6 +43,13 @@ func RegisterPasswordValidation(validate *validator.Validate) {
 		lowerCase := lowerCasePattern.FindAllString(pass, -1)
 
 		return len(numbers) >= 1 && len(specialChars) >= 1 && len(upperCase) >= 1 && len(lowerCase) >= 1
+	})
+}
+
+func RegisterOffensiveLanguageValidation(validate *validator.Validate) {
+	validate.RegisterValidation("nooffensive", func(fl validator.FieldLevel) bool {
+		name := fl.Field().String()
+		return !IsOffensive(name)
 	})
 }
 

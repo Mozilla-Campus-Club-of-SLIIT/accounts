@@ -96,8 +96,13 @@ export default function Signup() {
       if (redirect) window.location.href = redirect;
       else window.location.href = "/login";
     } else {
+      const errorMessage = result?.error?.message ?? response.statusText;
+      const displayMessage = Array.isArray(errorMessage)
+        ? errorMessage[0]?.reason
+        : errorMessage;
+
       dispatchAlert({
-        message: result?.error?.message ?? response.statusText,
+        message: displayMessage,
         type: "error",
         position: "top center",
       });
