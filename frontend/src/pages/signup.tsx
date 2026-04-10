@@ -21,65 +21,70 @@ export default function Signup() {
   const [confirmationPasswordError, setConfirmationPasswordError] =
     useState("");
 
+  const validateName = () => {
+    const input = nameRef.current;
+    if (!input?.checkValidity()) {
+      if (input?.validity.tooShort) setNameError("Name must be atleast 3 characters");
+      else setNameError(input?.validationMessage || "");
+    } else {
+      setNameError("");
+    }
+  };
+
+  const validateEmail = () => {
+    const input = emailRef.current;
+    if (!input?.checkValidity()) {
+      if (input?.validity.typeMismatch) setEmailError("Invalid email");
+      else setEmailError(input?.validationMessage || "");
+    } else {
+      setEmailError("");
+    }
+  };
+
+  const validatePassword = () => {
+    const input = passwordRef.current;
+    if (!input?.checkValidity()) {
+      if (input?.validity.tooShort) setPasswordError("Password must be atleast 8 characters");
+      else if (input?.validity.patternMismatch)
+        setPasswordError("Password must have a number, special character, uppercase and lowercase letter");
+      else setPasswordError(input?.validationMessage || "");
+    } else {
+      setPasswordError("");
+    }
+    if (confirmationPasswordRef.current?.value) validateConfirmPassword();
+  };
+
+  const validateConfirmPassword = () => {
+    const input = confirmationPasswordRef.current;
+    if (!input?.checkValidity()) {
+      if (input?.validity.tooShort) setConfirmationPasswordError("Password must be atleast 8 characters");
+      else setConfirmationPasswordError(input?.validationMessage || "");
+    } else if (input?.value !== passwordRef.current?.value) {
+      setConfirmationPasswordError("Confirmation should match your password");
+    } else {
+      setConfirmationPasswordError("");
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    validateName();
+    validateEmail();
+    validatePassword();
+    validateConfirmPassword();
 
     const nameInput = nameRef.current;
     const emailInput = emailRef.current;
     const passwordInput = passwordRef.current;
     const confirmationPasswordInput = confirmationPasswordRef.current;
 
-    const nameValid = nameInput?.checkValidity();
-    const emailValid = emailInput?.checkValidity();
-    const passwordValid = passwordInput?.checkValidity();
-    const confirmationPasswordValid =
-      confirmationPasswordInput?.checkValidity();
-
-    setNameError("");
-    setEmailError("");
-    setPasswordError("");
-    setConfirmationPasswordError("");
-
-    if (!nameValid) {
-      if (nameInput?.validity.tooShort)
-        setNameError("Name must be atleast 3 characters");
-      else setNameError(nameInput?.validationMessage || "");
-    }
-
-    if (!emailValid) {
-      if (emailInput?.validity.typeMismatch) setEmailError("Invalid email");
-      else setEmailError(emailInput?.validationMessage || "");
-    }
-
-    if (!passwordValid) {
-      if (passwordInput?.validity?.tooShort)
-        setPasswordError("Password must be atleast 8 characters");
-      else if (passwordInput?.validity?.patternMismatch)
-        setPasswordError(
-          "Password must have a number, special character, uppercase and lowercase letter",
-        );
-      else setPasswordError(passwordInput?.validationMessage || "");
-    }
-
-    if (!confirmationPasswordValid) {
-      if (passwordInput?.validity.tooShort)
-        setConfirmationPasswordError("Password must be atleast 8 characters");
-      else
-        setConfirmationPasswordError(
-          confirmationPasswordInput?.validationMessage || "",
-        );
-    }
-
-    if (passwordInput?.value !== confirmationPasswordInput?.value)
-      return setConfirmationPasswordError(
-        "Confirmation should match your password",
-      );
-
     if (
-      !nameValid ||
-      !emailValid ||
-      !passwordValid ||
-      !confirmationPasswordValid
+      !nameInput?.checkValidity() ||
+      !emailInput?.checkValidity() ||
+      !passwordInput?.checkValidity() ||
+      !confirmationPasswordInput?.checkValidity() ||
+      passwordInput?.value !== confirmationPasswordInput?.value
     )
       return;
 
@@ -110,13 +115,13 @@ export default function Signup() {
   };
 
   return (
-    <main className="grid content-center-safe justify-center-safe h-screen bg-gray-100 sm:bg-white">
-      <Card className="shadow-none sm:shadow-sm mx-auto p-5 sm:p-8">
-        <form className="grid" onSubmit={handleSubmit} noValidate>
+    <main className="grid content-center-safe justify-center-safe h-screen bg-gray-100 sm:bg-white px-4 sm:px-0">
+      <Card className="shadow-none sm:shadow-sm mx-auto p-5 sm:p-8 w-full max-w-md">
+        <form className="grid w-full min-w-0" onSubmit={handleSubmit} noValidate>
           <div>
             <img src={logo} width={110} className="my-3" />
-            <h1 className="text-primary text-2xl">Welcome Back!</h1>
-            <h5>Sign in to continue</h5>
+            <h1 className="text-primary text-2xl">Create Account</h1>
+            <h5>Sign up to get started</h5>
           </div>
           <div className="flex my-5 border border-black rounded-2xl p-1">
             <Link
@@ -142,6 +147,7 @@ export default function Signup() {
                 ref={nameRef}
                 minLength={3}
                 required
+                onBlur={validateName}
               />
             </fieldset>
             <fieldset className="grid">
@@ -152,10 +158,11 @@ export default function Signup() {
                 error={emailError}
                 ref={emailRef}
                 required
+                onBlur={validateEmail}
               />
             </fieldset>
             <fieldset className="grid">
-              <label htmlFor="username">Password</label>
+              <label htmlFor="password">Password</label>
               <Input
                 type="password"
                 id="password"
@@ -164,6 +171,8 @@ export default function Signup() {
                 minLength={8}
                 pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).+$"
                 required
+                onBlur={validatePassword}
+                showToggle
               />
             </fieldset>
             <fieldset className="grid">
@@ -175,6 +184,8 @@ export default function Signup() {
                 ref={confirmationPasswordRef}
                 minLength={8}
                 required
+                onBlur={validateConfirmPassword}
+                showToggle
               />
             </fieldset>
           </div>
