@@ -115,13 +115,13 @@ export default function Signup() {
   };
 
   return (
-    <main className="grid content-center-safe justify-center-safe h-screen bg-gray-100 sm:bg-white px-4 sm:px-0">
-      <Card className="shadow-none sm:shadow-sm mx-auto p-5 sm:p-8 w-full max-w-md">
+    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-100 sm:bg-white px-4 sm:px-0">
+      <Card className="shadow-none sm:shadow-sm mx-auto p-5 sm:p-8 w-full max-w-lg">
         <form className="grid w-full min-w-0" onSubmit={handleSubmit} noValidate>
           <div>
             <img src={logo} width={110} className="my-3" />
             <h1 className="text-primary text-2xl">Create Account</h1>
-            <h5>Sign up to get started</h5>
+            <h5 className="text-sm text-gray-500 mt-1">Sign up to get started</h5>
           </div>
           <div className="flex my-5 border border-black rounded-2xl p-1">
             <Link
@@ -137,7 +137,7 @@ export default function Signup() {
               Sign up
             </Link>
           </div>
-          <div className="my-2">
+          <div className="my-4 flex flex-col gap-4">
             <fieldset className="grid">
               <label htmlFor="username">Username</label>
               <Input

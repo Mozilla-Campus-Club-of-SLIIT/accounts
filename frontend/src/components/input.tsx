@@ -29,8 +29,8 @@ export default function Input({
         <input
           type={inputType}
           className={twMerge(
-            "bg-white w-full my-1 p-1 rounded-sm ring-1 ring-gray-200",
-            showToggle && "pr-8",
+            "bg-white w-full my-1 px-3 py-2.5 rounded-sm ring-1 ring-gray-200",
+            showToggle && "pr-10",
             className,
             hasError && "ring-2 ring-red-500"
           )}
