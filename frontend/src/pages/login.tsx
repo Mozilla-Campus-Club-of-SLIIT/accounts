@@ -1,45 +1,53 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import logo from "../assets/logo.png";
 import Button from "../components/button";
 import Card from "../components/card";
+import api from "../lib/api";
 import Input from "../components/input";
 import { useAlert } from "../contexts/alert";
 
 export default function Login() {
+  const [searchParams] = useSearchParams();
+  const { dispatchAlert } = useAlert();
+
   const emailRef = useRef<HTMLInputElement>(null);
   const [emailError, setEmailError] = useState("");
   const passwordRef = useRef<HTMLInputElement>(null);
   const [passwordError, setPasswordError] = useState("");
-  const [searchParams] = useSearchParams();
-  const { dispatchAlert } = useAlert();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const validateEmail = () => {
+    const input = emailRef.current;
+    if (!input?.checkValidity()) {
+      if (input?.validity.typeMismatch) setEmailError("Invalid email");
+      else setEmailError(input?.validationMessage || "");
+    } else {
+      setEmailError("");
+    }
+  };
+
+  const validatePassword = () => {
+    const input = passwordRef.current;
+    if (!input?.checkValidity()) {
+      setPasswordError(input?.validationMessage || "");
+    } else {
+      setPasswordError("");
+    }
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    validateEmail();
+    validatePassword();
 
     const emailInput = emailRef.current;
     const passwordInput = passwordRef.current;
-    const emailValid = emailInput?.checkValidity();
-    const passwordValid = passwordInput?.checkValidity();
 
-    setEmailError("");
-    setPasswordError("");
-
-    if (!emailValid) {
-      if (emailInput?.validity.typeMismatch) setEmailError("Invalid email");
-      else setEmailError(emailInput?.validationMessage || "");
-    }
-
-    setPasswordError(passwordRef.current?.validationMessage || "");
-
-    if (!emailValid || !passwordValid) return;
+    if (!emailInput?.checkValidity() || !passwordInput?.checkValidity()) return;
 
     try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const response = await api.post("/api/login", {
         body: JSON.stringify({
           email: emailInput?.value.trim(),
           password: passwordInput?.value.trim(),
@@ -73,13 +81,13 @@ export default function Login() {
   };
 
   return (
-    <main className="grid content-center-safe justify-center-safe h-screen bg-gray-100 sm:bg-white">
-      <Card className="shadow-none sm:shadow-sm mx-auto p-5 sm:p-8">
-        <form className="grid" onSubmit={handleSubmit} noValidate>
+    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-100 sm:bg-white px-4 sm:px-0">
+      <Card className="shadow-none sm:shadow-sm mx-auto p-5 sm:p-8 w-full max-w-lg">
+        <form className="grid w-full min-w-0" onSubmit={handleSubmit} noValidate>
           <div>
             <img src={logo} width={110} className="my-3" />
             <h1 className="text-primary text-2xl">Welcome Back!</h1>
-            <h5>Sign in to continue</h5>
+            <h5 className="text-sm text-gray-500 mt-1">Sign in to continue</h5>
           </div>
           <div className="flex my-5 border border-black rounded-2xl p-1">
             <Link
@@ -95,7 +103,7 @@ export default function Login() {
               Sign up
             </Link>
           </div>
-          <div className="my-2">
+          <div className="my-4 flex flex-col gap-4">
             <fieldset className="grid">
               <label htmlFor="email">Email</label>
               <Input
@@ -104,16 +112,19 @@ export default function Login() {
                 error={emailError}
                 ref={emailRef}
                 required
+                onBlur={validateEmail}
               />
             </fieldset>
             <fieldset className="grid">
-              <label htmlFor="username">Password</label>
+              <label htmlFor="password">Password</label>
               <Input
                 type="password"
                 id="password"
                 error={passwordError}
                 ref={passwordRef}
                 required
+                onBlur={validatePassword}
+                showToggle
               />
             </fieldset>
           </div>
